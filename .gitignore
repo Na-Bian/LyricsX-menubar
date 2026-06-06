@@ -1,0 +1,9 @@
+Product
+build/
+DerivedData/
+Scripts/release/bin/
+.DS_Store
+xcuserdata
+.claude
+.omc
+swift-syntax/.swiftpm
