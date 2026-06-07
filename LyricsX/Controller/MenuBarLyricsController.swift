@@ -28,6 +28,7 @@ class MenuBarLyricsController {
     private lazy var marqueeLabel = MarqueeLabel(frame: .init(x: 0, y: 0, width: lyricItemLength, height: 22))
 
     private static let defaultLyric = "LyricsX"
+    private static let unavailableLyric = NSLocalizedString("No Available Lyrics", comment: "Menu bar text shown when the current track has no lyrics")
 
     private var screenLyrics: (lyrics: String, duration: TimeInterval) = (MenuBarLyricsController.defaultLyric, 2) {
         didSet {
@@ -58,13 +59,18 @@ class MenuBarLyricsController {
     }
 
     private func handleLyricsDisplay(event: (lyrics: Lyrics?, index: Int?)) {
-        guard !defaults[.disableLyricsWhenPaused] || selectedPlayer.playbackState.isPlaying,
-              let lyrics = event.lyrics,
-              let index = event.index else {
-//            screenLyrics = (MenuBarLyricsController.defaultLyric, 2)
+        guard !defaults[.disableLyricsWhenPaused] || selectedPlayer.playbackState.isPlaying else {
+            resetScreenLyrics()
             return
         }
-        let currentLine = lyrics.lines[index]
+
+        guard let lyrics = event.lyrics,
+              let index = event.index,
+              let currentLine = lyrics.lines[safe: index] else {
+            resetScreenLyrics()
+            return
+        }
+
         var newScreenLyrics = currentLine.content
         if let converter = ChineseConverter.shared, lyrics.metadata.language?.hasPrefix("zh") == true {
             newScreenLyrics = converter.convert(newScreenLyrics)
@@ -81,6 +87,13 @@ class MenuBarLyricsController {
             lineDisplayTime = 2
         }
         screenLyrics = (newScreenLyrics, lineDisplayTime)
+    }
+
+    private func resetScreenLyrics() {
+        guard screenLyrics.lyrics != MenuBarLyricsController.unavailableLyric || screenLyrics.duration != 2 else {
+            return
+        }
+        screenLyrics = (MenuBarLyricsController.unavailableLyric, 2)
     }
 
     @objc private func updateStatusItems() {
