@@ -40,9 +40,7 @@ class MenuBarLyricsController {
     private var cancelBag = Set<AnyCancellable>()
 
     private init() {
-        if !defaults[.hideMenuBarItems] {
-            updateStatusItems()
-        }
+        updateStatusItems()
         AppController.shared.$currentLyrics
             .combineLatest(AppController.shared.$currentLineIndex)
             .receive(on: DispatchQueue.lyricsDisplay)
@@ -53,7 +51,7 @@ class MenuBarLyricsController {
             .signal()
             .invoke(MenuBarLyricsController.updateStatusItems, weaklyOn: self)
             .store(in: &cancelBag)
-        defaults.publisher(for: [.menuBarLyricsEnabled, .combinedMenubarLyrics, .hideMenuBarItems, .menuBarLyricsWidth])
+        defaults.publisher(for: [.menuBarLyricsEnabled, .combinedMenubarLyrics, .menuBarLyricsWidth])
             .prepend()
             .invoke(MenuBarLyricsController.updateStatusItems, weaklyOn: self)
             .store(in: &cancelBag)
@@ -86,12 +84,6 @@ class MenuBarLyricsController {
     }
 
     @objc private func updateStatusItems() {
-        guard !defaults[.hideMenuBarItems] else {
-            removeIconStatusItem()
-            removeLyricStatusItem()
-            return
-        }
-
         guard defaults[.menuBarLyricsEnabled] else {
             removeLyricStatusItem()
             if iconStatusItem == nil {

@@ -150,6 +150,8 @@ class PreferenceGeneralViewController: PreferenceViewController {
     }
 
     private func setupMenuBarLyricsWidthControls() {
+        hideMenuBarItemsButton.isHidden = true
+
         let titleLabel = NSTextField(labelWithString: NSLocalizedString("Menu bar lyrics width:", comment: "General preferences menu bar lyrics width slider label"))
         titleLabel.alignment = .right
         titleLabel.setContentHuggingPriority(.required, for: .horizontal)
@@ -171,7 +173,7 @@ class PreferenceGeneralViewController: PreferenceViewController {
 
         NSLayoutConstraint.activate([
             menuBarLyricsWidthSlider.leadingAnchor.constraint(equalTo: hideMenuBarItemsButton.leadingAnchor),
-            menuBarLyricsWidthSlider.centerYAnchor.constraint(equalTo: hideMenuBarItemsButton.topAnchor, constant: -18),
+            menuBarLyricsWidthSlider.centerYAnchor.constraint(equalTo: hideMenuBarItemsButton.centerYAnchor),
             titleLabel.trailingAnchor.constraint(equalTo: menuBarLyricsWidthSlider.leadingAnchor, constant: -12),
             titleLabel.centerYAnchor.constraint(equalTo: menuBarLyricsWidthSlider.centerYAnchor),
             titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 42),
