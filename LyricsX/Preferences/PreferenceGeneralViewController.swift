@@ -4,6 +4,9 @@ import ServiceManagement
 import LaunchAtLogin
 
 class PreferenceGeneralViewController: PreferenceViewController {
+    private let menuBarLyricsWidthValueLabel = NSTextField(labelWithString: "")
+    private let menuBarLyricsWidthSlider = NSSlider(value: 142, minValue: 80, maxValue: 260, target: nil, action: nil)
+
     @objc dynamic var launchAtLogin = LaunchAtLogin.kvo
     @IBOutlet var preferAuto: NSButton!
     @IBOutlet var preferiTunes: NSButton!
@@ -23,6 +26,7 @@ class PreferenceGeneralViewController: PreferenceViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupMenuBarLyricsWidthControls()
 
         switch defaults[.preferredPlayerIndex] {
         case 0:
@@ -143,6 +147,57 @@ class PreferenceGeneralViewController: PreferenceViewController {
             loadHomonymLrcButton.isEnabled = true
         }
     }
+
+    private func setupMenuBarLyricsWidthControls() {
+        let titleLabel = NSTextField(labelWithString: "菜单栏歌词宽度:")
+        titleLabel.alignment = .right
+        titleLabel.setContentHuggingPriority(.required, for: .horizontal)
+
+        menuBarLyricsWidthSlider.doubleValue = Double(clampedMenuBarLyricsWidth)
+        menuBarLyricsWidthSlider.numberOfTickMarks = 7
+        menuBarLyricsWidthSlider.allowsTickMarkValuesOnly = false
+        menuBarLyricsWidthSlider.target = self
+        menuBarLyricsWidthSlider.action = #selector(menuBarLyricsWidthChanged(_:))
+
+        menuBarLyricsWidthValueLabel.alignment = .left
+        menuBarLyricsWidthValueLabel.monospacedDigitFont()
+        updateMenuBarLyricsWidthValueLabel()
+
+        let row = NSStackView(views: [titleLabel, menuBarLyricsWidthSlider, menuBarLyricsWidthValueLabel])
+        row.translatesAutoresizingMaskIntoConstraints = false
+        row.orientation = .horizontal
+        row.spacing = 10
+        row.alignment = .centerY
+        view.addSubview(row)
+
+        NSLayoutConstraint.activate([
+            row.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 42),
+            row.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -42),
+            row.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -18),
+            titleLabel.widthAnchor.constraint(equalToConstant: 116),
+            menuBarLyricsWidthSlider.widthAnchor.constraint(equalToConstant: 210),
+            menuBarLyricsWidthValueLabel.widthAnchor.constraint(equalToConstant: 48)
+        ])
+    }
+
+    @objc private func menuBarLyricsWidthChanged(_ sender: NSSlider) {
+        defaults[.menuBarLyricsWidth] = CGFloat(Int(sender.doubleValue.rounded()))
+        updateMenuBarLyricsWidthValueLabel()
+    }
+
+    private var clampedMenuBarLyricsWidth: CGFloat {
+        min(max(defaults[.menuBarLyricsWidth], 80), 260)
+    }
+
+    private func updateMenuBarLyricsWidthValueLabel() {
+        menuBarLyricsWidthValueLabel.stringValue = "\(Int(clampedMenuBarLyricsWidth)) px"
+    }
 }
 
 private let localizations = Bundle.main.localizations.filter { !$0.localizedCaseInsensitiveContains("Base") }.sorted()
+
+private extension NSTextField {
+    func monospacedDigitFont() {
+        font = NSFont.monospacedDigitSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
+    }
+}

@@ -19,7 +19,9 @@ class MenuBarLyricsController {
 
     private var iconStatusItem: NSStatusItem?
     private var lyricStatusItem: NSStatusItem?
-    private let lyricItemLength: CGFloat = 142
+    private var lyricItemLength: CGFloat {
+        min(max(defaults[.menuBarLyricsWidth], 80), 260)
+    }
 
     private lazy var marqueeLabel = MarqueeLabel(frame: .init(x: 0, y: 0, width: lyricItemLength, height: 22))
 
@@ -49,7 +51,7 @@ class MenuBarLyricsController {
             .signal()
             .invoke(MenuBarLyricsController.updateStatusItems, weaklyOn: self)
             .store(in: &cancelBag)
-        defaults.publisher(for: [.menuBarLyricsEnabled, .combinedMenubarLyrics, .hideMenuBarItems])
+        defaults.publisher(for: [.menuBarLyricsEnabled, .combinedMenubarLyrics, .hideMenuBarItems, .menuBarLyricsWidth])
             .prepend()
             .invoke(MenuBarLyricsController.updateStatusItems, weaklyOn: self)
             .store(in: &cancelBag)
@@ -94,6 +96,8 @@ class MenuBarLyricsController {
             setupLyricStatusItem()
         }
 
+        updateLyricItemWidth()
+
         if defaults[.menuBarLyricsEnabled] {
             marqueeLabel.setStringValue(screenLyrics.lyrics, lineDisplayTime: screenLyrics.duration)
         } else {
@@ -111,6 +115,13 @@ class MenuBarLyricsController {
         lyricStatusItem?.button?.frame = marqueeLabel.bounds
         lyricStatusItem?.button?.addSubview(marqueeLabel)
         setupStatusItemMenu()
+    }
+
+    private func updateLyricItemWidth() {
+        let width = lyricItemLength
+        lyricStatusItem?.length = width
+        marqueeLabel.frame = .init(x: 0, y: 0, width: width, height: 22)
+        lyricStatusItem?.button?.frame = marqueeLabel.bounds
     }
 
     private func setupStatusItemMenu() {

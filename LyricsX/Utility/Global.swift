@@ -90,6 +90,7 @@ extension UserDefaults.DefaultsKeys {
     static let chineseConversionIndex = Key<Int>("ChineseConversionIndex")
 
     static let combinedMenubarLyrics = Key<Bool>("CombinedMenubarLyrics")
+    static let menuBarLyricsWidth = Key<CGFloat>("MenuBarLyricsWidth")
 
     static let hideLyricsWhenMousePassingBy = Key<Bool>("HideLyricsWhenMousePassingBy")
     static let disableLyricsWhenPaused = Key<Bool>("DisableLyricsWhenPaused")

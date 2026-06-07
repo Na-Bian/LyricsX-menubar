@@ -6,6 +6,8 @@
 	<false/>
 	<key>MenuBarLyricsEnabled</key>
 	<true/>
+	<key>MenuBarLyricsWidth</key>
+	<integer>142</integer>
 	<key>TouchBarLyricsEnabled</key>
 	<false/>
 	<key>isShowLyricsHUD</key>
