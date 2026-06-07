@@ -24,6 +24,29 @@
         }
       }
     },
+    "Searching Lyrics..." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Searching Lyrics..."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在搜索歌词..."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在搜尋歌詞..."
+          }
+        }
+      }
+    },
     "Menu bar lyrics width:" : {
       "extractionState" : "manual",
       "localizations" : {

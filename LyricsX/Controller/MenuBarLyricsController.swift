@@ -29,6 +29,7 @@ class MenuBarLyricsController {
 
     private static let defaultLyric = "LyricsX"
     private static let unavailableLyric = NSLocalizedString("No Available Lyrics", comment: "Menu bar text shown when the current track has no lyrics")
+    private static let searchingLyric = NSLocalizedString("Searching Lyrics...", comment: "Menu bar text shown while LyricsX is searching lyrics for the current track")
 
     private var screenLyrics: (lyrics: String, duration: TimeInterval) = (MenuBarLyricsController.defaultLyric, 2) {
         didSet {
@@ -43,7 +44,7 @@ class MenuBarLyricsController {
     private init() {
         updateStatusItems()
         AppController.shared.$currentLyrics
-            .combineLatest(AppController.shared.$currentLineIndex)
+            .combineLatest(AppController.shared.$currentLineIndex, AppController.shared.$isSearchingLyrics)
             .receive(on: DispatchQueue.lyricsDisplay)
             .invoke(MenuBarLyricsController.handleLyricsDisplay, weaklyOn: self)
             .store(in: &cancelBag)
@@ -58,16 +59,23 @@ class MenuBarLyricsController {
             .store(in: &cancelBag)
     }
 
-    private func handleLyricsDisplay(event: (lyrics: Lyrics?, index: Int?)) {
+    private func handleLyricsDisplay(event: (lyrics: Lyrics?, index: Int?, isSearching: Bool)) {
         guard !defaults[.disableLyricsWhenPaused] || selectedPlayer.playbackState.isPlaying else {
-            resetScreenLyrics()
+            showUnavailableLyrics()
             return
         }
 
-        guard let lyrics = event.lyrics,
-              let index = event.index,
-              let currentLine = lyrics.lines[safe: index] else {
-            resetScreenLyrics()
+        guard let lyrics = event.lyrics else {
+            if event.isSearching {
+                updateScreenLyrics(to: MenuBarLyricsController.searchingLyric, duration: 2)
+            } else {
+                showUnavailableLyrics()
+            }
+            return
+        }
+
+        guard let (currentLine, currentIndex) = currentLine(from: lyrics, index: event.index) else {
+            showUnavailableLyrics()
             return
         }
 
@@ -81,7 +89,7 @@ class MenuBarLyricsController {
         let lineDisplayTime: TimeInterval
         if let duration = currentLine.attachments.timetag?.duration {
             lineDisplayTime = duration
-        } else if let nextLine = lyrics.lines[safe: index + 1] {
+        } else if let nextLine = lyrics.lines[safe: currentIndex + 1] {
             lineDisplayTime = nextLine.position - currentLine.position
         } else {
             lineDisplayTime = 2
@@ -89,11 +97,28 @@ class MenuBarLyricsController {
         screenLyrics = (newScreenLyrics, lineDisplayTime)
     }
 
-    private func resetScreenLyrics() {
-        guard screenLyrics.lyrics != MenuBarLyricsController.unavailableLyric || screenLyrics.duration != 2 else {
+    private func currentLine(from lyrics: Lyrics, index: Int?) -> (line: LyricsLine, index: Int)? {
+        if let index,
+           let line = lyrics.lines[safe: index],
+           line.enabled {
+            return (line, index)
+        }
+
+        guard let fallbackIndex = lyrics.lines.firstIndex(where: { $0.enabled && !$0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }) else {
+            return nil
+        }
+        return (lyrics.lines[fallbackIndex], fallbackIndex)
+    }
+
+    private func showUnavailableLyrics() {
+        updateScreenLyrics(to: MenuBarLyricsController.unavailableLyric, duration: 2)
+    }
+
+    private func updateScreenLyrics(to lyrics: String, duration: TimeInterval) {
+        guard screenLyrics.lyrics != lyrics || screenLyrics.duration != duration else {
             return
         }
-        screenLyrics = (MenuBarLyricsController.unavailableLyric, 2)
+        screenLyrics = (lyrics, duration)
     }
 
     @objc private func updateStatusItems() {

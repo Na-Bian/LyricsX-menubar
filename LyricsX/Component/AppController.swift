@@ -22,6 +22,7 @@ class AppController: NSObject {
     }
 
     @Published var currentLineIndex: Int?
+    @Published var isSearchingLyrics = false
 
     var searchRequest: LyricsSearchRequest?
     var searchTask: Task<Void, Never>?
@@ -65,6 +66,9 @@ class AppController: NSObject {
 
         Task {
             try await updateLyricsManager()
+            if currentLyrics == nil, selectedPlayer.currentTrack != nil {
+                currentTrackChanged()
+            }
         }
     }
 
@@ -159,6 +163,7 @@ class AppController: NSObject {
         }
         currentLyrics = nil
         currentLineIndex = nil
+        isSearchingLyrics = false
         searchTask?.cancel()
         guard let track = selectedPlayer.currentTrack else {
             return
@@ -240,7 +245,13 @@ class AppController: NSObject {
         let duration = track.duration ?? 0
         let request = LyricsSearchRequest(searchTerm: .info(title: title, artist: artist), duration: duration, limit: 5)
         searchRequest = request
+        isSearchingLyrics = true
         searchTask = Task { @MainActor in
+            defer {
+                if self.searchRequest == request {
+                    self.isSearchingLyrics = false
+                }
+            }
             do {
                 // Accept the first arrived lyrics immediately,
                 // but keep collecting for a short window to allow higher-priority providers,
