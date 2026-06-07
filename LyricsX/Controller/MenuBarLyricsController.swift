@@ -19,8 +19,10 @@ class MenuBarLyricsController {
 
     private var iconStatusItem: NSStatusItem?
     private var lyricStatusItem: NSStatusItem?
+    private var buttonImage = #imageLiteral(resourceName: "status_bar_icon")
+    private var buttonLength: CGFloat = 30
     private var lyricItemLength: CGFloat {
-        min(max(defaults[.menuBarLyricsWidth], 80), 260)
+        min(max(defaults[.menuBarLyricsWidth], 60), 240)
     }
 
     private lazy var marqueeLabel = MarqueeLabel(frame: .init(x: 0, y: 0, width: lyricItemLength, height: 22))
@@ -85,24 +87,26 @@ class MenuBarLyricsController {
 
     @objc private func updateStatusItems() {
         guard !defaults[.hideMenuBarItems] else {
-            marqueeLabel.removeFromSuperview()
-            iconStatusItem = nil
-            lyricStatusItem = nil
+            removeIconStatusItem()
+            removeLyricStatusItem()
             return
         }
 
-        if lyricStatusItem == nil || iconStatusItem != nil {
-            iconStatusItem = nil
+        guard defaults[.menuBarLyricsEnabled] else {
+            removeLyricStatusItem()
+            if iconStatusItem == nil {
+                setupIconStatusItem()
+            }
+            return
+        }
+
+        removeIconStatusItem()
+
+        if lyricStatusItem == nil {
             setupLyricStatusItem()
         }
-
         updateLyricItemWidth()
-
-        if defaults[.menuBarLyricsEnabled] {
-            marqueeLabel.setStringValue(screenLyrics.lyrics, lineDisplayTime: screenLyrics.duration)
-        } else {
-            marqueeLabel.setStringValue(MenuBarLyricsController.defaultLyric, lineDisplayTime: 2)
-        }
+        marqueeLabel.setStringValue(screenLyrics.lyrics, lineDisplayTime: screenLyrics.duration)
     }
 
     private func setupLyricStatusItem() {
@@ -117,6 +121,29 @@ class MenuBarLyricsController {
         setupStatusItemMenu()
     }
 
+    private func setupIconStatusItem() {
+        iconStatusItem = NSStatusBar.system.statusItem(withLength: buttonLength)
+        iconStatusItem?.button?.title = ""
+        iconStatusItem?.button?.image = buttonImage
+        iconStatusItem?.length = buttonLength
+        setupStatusItemMenu()
+    }
+
+    private func removeIconStatusItem() {
+        if let iconStatusItem {
+            NSStatusBar.system.removeStatusItem(iconStatusItem)
+        }
+        iconStatusItem = nil
+    }
+
+    private func removeLyricStatusItem() {
+        marqueeLabel.removeFromSuperview()
+        if let lyricStatusItem {
+            NSStatusBar.system.removeStatusItem(lyricStatusItem)
+        }
+        lyricStatusItem = nil
+    }
+
     private func updateLyricItemWidth() {
         let width = lyricItemLength
         lyricStatusItem?.length = width
@@ -125,7 +152,7 @@ class MenuBarLyricsController {
     }
 
     private func setupStatusItemMenu() {
-        iconStatusItem?.menu = nil
+        iconStatusItem?.menu = statusBarMenu
         lyricStatusItem?.menu = statusBarMenu
     }
 }

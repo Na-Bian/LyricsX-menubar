@@ -5,7 +5,7 @@ import LaunchAtLogin
 
 class PreferenceGeneralViewController: PreferenceViewController {
     private let menuBarLyricsWidthValueLabel = NSTextField(labelWithString: "")
-    private let menuBarLyricsWidthSlider = NSSlider(value: 142, minValue: 80, maxValue: 260, target: nil, action: nil)
+    private let menuBarLyricsWidthSlider = NSSlider(value: 142, minValue: 60, maxValue: 240, target: nil, action: nil)
 
     @objc dynamic var launchAtLogin = LaunchAtLogin.kvo
     @IBOutlet var preferAuto: NSButton!
@@ -23,6 +23,7 @@ class PreferenceGeneralViewController: PreferenceViewController {
     @IBOutlet var loadHomonymLrcButton: NSButton!
 
     @IBOutlet var languagePopUp: NSPopUpButton!
+    @IBOutlet var hideMenuBarItemsButton: NSButton!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -149,7 +150,7 @@ class PreferenceGeneralViewController: PreferenceViewController {
     }
 
     private func setupMenuBarLyricsWidthControls() {
-        let titleLabel = NSTextField(labelWithString: "菜单栏歌词宽度:")
+        let titleLabel = NSTextField(labelWithString: NSLocalizedString("Menu bar lyrics width:", comment: "General preferences menu bar lyrics width slider label"))
         titleLabel.alignment = .right
         titleLabel.setContentHuggingPriority(.required, for: .horizontal)
 
@@ -163,18 +164,21 @@ class PreferenceGeneralViewController: PreferenceViewController {
         menuBarLyricsWidthValueLabel.monospacedDigitFont()
         updateMenuBarLyricsWidthValueLabel()
 
-        let row = NSStackView(views: [titleLabel, menuBarLyricsWidthSlider, menuBarLyricsWidthValueLabel])
-        row.translatesAutoresizingMaskIntoConstraints = false
-        row.orientation = .horizontal
-        row.spacing = 10
-        row.alignment = .centerY
-        view.addSubview(row)
+        [titleLabel, menuBarLyricsWidthSlider, menuBarLyricsWidthValueLabel].forEach {
+            $0.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview($0)
+        }
 
         NSLayoutConstraint.activate([
-            row.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 42),
-            row.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -42),
-            row.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -18),
-            titleLabel.widthAnchor.constraint(equalToConstant: 116),
+            menuBarLyricsWidthSlider.leadingAnchor.constraint(equalTo: hideMenuBarItemsButton.leadingAnchor),
+            menuBarLyricsWidthSlider.centerYAnchor.constraint(equalTo: hideMenuBarItemsButton.topAnchor, constant: -18),
+            titleLabel.trailingAnchor.constraint(equalTo: menuBarLyricsWidthSlider.leadingAnchor, constant: -12),
+            titleLabel.centerYAnchor.constraint(equalTo: menuBarLyricsWidthSlider.centerYAnchor),
+            titleLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 42),
+            menuBarLyricsWidthValueLabel.leadingAnchor.constraint(equalTo: menuBarLyricsWidthSlider.trailingAnchor, constant: 10),
+            menuBarLyricsWidthValueLabel.centerYAnchor.constraint(equalTo: menuBarLyricsWidthSlider.centerYAnchor),
+            menuBarLyricsWidthValueLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -42),
+            titleLabel.widthAnchor.constraint(equalToConstant: 170),
             menuBarLyricsWidthSlider.widthAnchor.constraint(equalToConstant: 210),
             menuBarLyricsWidthValueLabel.widthAnchor.constraint(equalToConstant: 48)
         ])
@@ -186,7 +190,7 @@ class PreferenceGeneralViewController: PreferenceViewController {
     }
 
     private var clampedMenuBarLyricsWidth: CGFloat {
-        min(max(defaults[.menuBarLyricsWidth], 80), 260)
+        min(max(defaults[.menuBarLyricsWidth], 60), 240)
     }
 
     private func updateMenuBarLyricsWidthValueLabel() {
