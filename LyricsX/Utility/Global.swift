@@ -171,6 +171,12 @@ extension UserDefaults.DefaultsKeys {
 // MARK: - Lyrics Priority
 
 func lyricsHasHigherPriority(_ new: Lyrics, over existing: Lyrics) -> Bool {
+    let newExactMatchScore = lyricsExactMatchScore(new)
+    let existingExactMatchScore = lyricsExactMatchScore(existing)
+    if newExactMatchScore != existingExactMatchScore {
+        return newExactMatchScore > existingExactMatchScore
+    }
+
     if defaults[.lyricsSourcePriorityEnabled] {
         let sourceOrder = defaults[.lyricsSourcePriorityOrder] ?? []
         let normalizedOrder = sourceOrder.map { $0.lowercased() }
@@ -187,6 +193,52 @@ func lyricsHasHigherPriority(_ new: Lyrics, over existing: Lyrics) -> Bool {
     }
 
     return new.quality > existing.quality
+}
+
+private func lyricsExactMatchScore(_ lyrics: Lyrics) -> Int {
+    guard case let .info(searchTitle, searchArtist)? = lyrics.metadata.request?.searchTerm else {
+        return 0
+    }
+
+    let candidateTitle = normalizedLyricsMatchString(lyrics.idTags[.title] ?? lyrics.metadata.title)
+    let requestedTitle = normalizedLyricsMatchString(searchTitle)
+    let candidateArtist = normalizedLyricsMatchString(lyrics.idTags[.artist] ?? lyrics.metadata.artist)
+    let requestedArtist = normalizedLyricsMatchString(searchArtist)
+
+    let titleMatches = candidateTitle != nil && candidateTitle == requestedTitle
+    let artistMatches = candidateArtist != nil && candidateArtist == requestedArtist
+
+    var score = 0
+    if titleMatches {
+        score += 10
+    }
+    if artistMatches {
+        score += 10
+    }
+    if titleMatches && artistMatches {
+        score += 100
+    }
+
+    if titleMatches,
+       artistMatches,
+       let candidateAlbum = normalizedLyricsMatchString(lyrics.idTags[.album]),
+       let requestedAlbum = normalizedLyricsMatchString(selectedPlayer.currentTrack?.album),
+       candidateAlbum == requestedAlbum {
+        score += 20
+    }
+
+    return score
+}
+
+private func normalizedLyricsMatchString(_ string: String?) -> String? {
+    guard let string else {
+        return nil
+    }
+
+    let normalized = string
+        .trimmingCharacters(in: .whitespacesAndNewlines)
+        .folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: .current)
+    return normalized.isEmpty ? nil : normalized
 }
 
 extension CGFloat: @retroactive DefaultConstructible {}
