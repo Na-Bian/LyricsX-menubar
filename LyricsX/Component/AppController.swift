@@ -26,6 +26,9 @@ class AppController: NSObject {
 
     var searchRequest: LyricsSearchRequest?
     var searchTask: Task<Void, Never>?
+    private var noLyricsRetryCounts: [String: Int] = [:]
+    private let noLyricsRetryLimit = 1
+    private let noLyricsRetryDelay: TimeInterval = 2
 
     private var cancelBag = Set<AnyCancellable>()
 
@@ -168,6 +171,8 @@ class AppController: NSObject {
         guard let track = selectedPlayer.currentTrack else {
             return
         }
+        let trackSearchKey = lyricsSearchKey(for: track)
+        noLyricsRetryCounts[trackSearchKey] = 0
         // FIXME: deal with optional value
         let title = track.title ?? ""
         let artist = track.artist ?? ""
@@ -247,7 +252,13 @@ class AppController: NSObject {
             return
         }
 
+        startLyricsSearch(for: track, searchKey: trackSearchKey)
+    }
+
+    private func startLyricsSearch(for track: MusicTrack, searchKey: String) {
         let duration = track.duration ?? 0
+        let title = track.title ?? ""
+        let artist = track.artist ?? ""
         let request = LyricsSearchRequest(searchTerm: .info(title: title, artist: artist), duration: duration, limit: 5)
         searchRequest = request
         isSearchingLyrics = true
@@ -288,11 +299,38 @@ class AppController: NSObject {
                 if defaults[.writeToiTunesAutomatically] {
                     writeToiTunes(overwrite: true)
                 }
+                scheduleRetryIfNeeded(for: track, searchKey: searchKey)
             } catch is CancellationError {
                 // Search was cancelled due to track change
             } catch {
                 print("Failed to fetch lyrics: \(error.localizedDescription)")
+                scheduleRetryIfNeeded(for: track, searchKey: searchKey)
             }
+        }
+    }
+
+    @MainActor
+    private func scheduleRetryIfNeeded(for track: MusicTrack, searchKey: String) {
+        guard currentLyrics == nil,
+              selectedPlayer.currentTrack.map(lyricsSearchKey(for:)) == searchKey,
+              !defaults[.noSearchingTrackIds].contains(track.id),
+              defaults[.noSearchingAlbumNames].contains(track.album ?? "") == false else {
+            return
+        }
+
+        let retryCount = noLyricsRetryCounts[searchKey] ?? 0
+        guard retryCount < noLyricsRetryLimit else {
+            return
+        }
+
+        noLyricsRetryCounts[searchKey] = retryCount + 1
+        searchTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: UInt64(noLyricsRetryDelay * 1_000_000_000))
+            guard currentLyrics == nil,
+                  selectedPlayer.currentTrack.map(lyricsSearchKey(for:)) == searchKey else {
+                return
+            }
+            startLyricsSearch(for: track, searchKey: searchKey)
         }
     }
 
@@ -397,6 +435,15 @@ class AppController: NSObject {
         let trackID = sanitizedLyricsFileNameComponent(track.id, fallback: "\(title)-\(artist)")
         let shortTrackID = String(trackID.prefix(48))
         return "\(title) - \(artist) [manual-\(shortTrackID)].lrcx"
+    }
+
+    private func lyricsSearchKey(for track: MusicTrack) -> String {
+        [
+            normalizedManualLyricsKeyComponent(track.title),
+            normalizedManualLyricsKeyComponent(track.artist),
+            normalizedManualLyricsKeyComponent(track.album),
+            track.duration.map { String(Int($0.rounded())) } ?? "",
+        ].joined(separator: "\u{1f}")
     }
 
     private func manualLyricsFingerprint(for track: MusicTrack) -> String {
