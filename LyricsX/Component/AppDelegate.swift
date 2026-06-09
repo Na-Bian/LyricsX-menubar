@@ -18,8 +18,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, NSMenu
 
     private lazy var updateController = SPUStandardUpdaterController(updaterDelegate: nil, userDriverDelegate: self)
 
-    var firstLaunchForShouldHanlderReopen: Bool = true
-
     lazy var searchLyricsWC: SearchLyricsWindowController = .init()
 
     lazy var preferencesWindowController: PreferenceWindowController = .create()
@@ -76,11 +74,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, NSMenu
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
-        if firstLaunchForShouldHanlderReopen {
-            firstLaunchForShouldHanlderReopen = false
-            return false
-        }
         preferencesWindowController.showWindow(nil)
+        NSApp.activate(ignoringOtherApps: true)
         return true
     }
 
