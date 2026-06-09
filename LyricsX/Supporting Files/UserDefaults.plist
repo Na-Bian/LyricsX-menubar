@@ -10,6 +10,8 @@
 	<integer>142</integer>
 	<key>ManualLyricsFileNamesByTrackID</key>
 	<dict/>
+	<key>ManualLyricsFileNamesByTrackFingerprint</key>
+	<dict/>
 	<key>TouchBarLyricsEnabled</key>
 	<false/>
 	<key>isShowLyricsHUD</key>

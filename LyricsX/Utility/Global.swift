@@ -70,6 +70,7 @@ extension UserDefaults.DefaultsKeys {
     static let noSearchingTrackIds = Key<[String]>("NoSearchingTrackIds")
     static let noSearchingAlbumNames = Key<[String]>("NoSearchingAlbumNames")
     static let manualLyricsFileNamesByTrackID = Key<[String: String]>("ManualLyricsFileNamesByTrackID")
+    static let manualLyricsFileNamesByTrackFingerprint = Key<[String: String]>("ManualLyricsFileNamesByTrackFingerprint")
 
     // Menu
     static let desktopLyricsEnabled = Key<Bool>("DesktopLyricsEnabled")

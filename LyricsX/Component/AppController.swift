@@ -333,10 +333,16 @@ class AppController: NSObject {
 
         let fileName = manualLyricsFileName(for: track)
         lyrics.persist(fileName: fileName)
+        lyrics.persist()
 
         var manualLyricsFileNames = defaults[.manualLyricsFileNamesByTrackID]
         manualLyricsFileNames[track.id] = fileName
         defaults[.manualLyricsFileNamesByTrackID] = manualLyricsFileNames
+
+        var manualLyricsFileNamesByFingerprint = defaults[.manualLyricsFileNamesByTrackFingerprint]
+        manualLyricsFileNamesByFingerprint[manualLyricsFingerprint(for: track)] = fileName
+        defaults[.manualLyricsFileNamesByTrackFingerprint] = manualLyricsFileNamesByFingerprint
+        defaults.synchronize()
     }
 
     private func allowSearching(_ track: MusicTrack) {
@@ -349,7 +355,10 @@ class AppController: NSObject {
     }
 
     private func manualLyrics(for track: MusicTrack) -> Lyrics? {
-        guard let fileName = defaults[.manualLyricsFileNamesByTrackID][track.id] else {
+        let fileName = defaults[.manualLyricsFileNamesByTrackID][track.id]
+            ?? defaults[.manualLyricsFileNamesByTrackFingerprint][manualLyricsFingerprint(for: track)]
+
+        guard let fileName else {
             return nil
         }
 
@@ -388,6 +397,21 @@ class AppController: NSObject {
         let trackID = sanitizedLyricsFileNameComponent(track.id, fallback: "\(title)-\(artist)")
         let shortTrackID = String(trackID.prefix(48))
         return "\(title) - \(artist) [manual-\(shortTrackID)].lrcx"
+    }
+
+    private func manualLyricsFingerprint(for track: MusicTrack) -> String {
+        [
+            normalizedManualLyricsKeyComponent(track.title),
+            normalizedManualLyricsKeyComponent(track.artist),
+            normalizedManualLyricsKeyComponent(track.album),
+        ].joined(separator: "\u{1f}")
+    }
+
+    private func normalizedManualLyricsKeyComponent(_ string: String?) -> String {
+        string?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], locale: .current)
+            ?? ""
     }
 
     private func sanitizedLyricsFileNameComponent(_ string: String?, fallback: String) -> String {
