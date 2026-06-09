@@ -8,6 +8,8 @@
 	<true/>
 	<key>MenuBarLyricsWidth</key>
 	<integer>142</integer>
+	<key>ManualLyricsFileNamesByTrackID</key>
+	<dict/>
 	<key>TouchBarLyricsEnabled</key>
 	<false/>
 	<key>isShowLyricsHUD</key>

@@ -94,16 +94,9 @@ class SearchLyricsViewController: NSViewController, NSTableViewDelegate, NSTable
         guard let track = selectedPlayer.currentTrack else {
             return
         }
-        if let index = defaults[.noSearchingTrackIds].firstIndex(of: track.id) {
-            defaults[.noSearchingTrackIds].remove(at: index)
-        }
-        if let index = defaults[.noSearchingAlbumNames].firstIndex(of: track.album ?? "") {
-            defaults[.noSearchingAlbumNames].remove(at: index)
-        }
 
         let lrc = searchResult[index]
-        lrc.associateWithTrack(track)
-        AppController.shared.currentLyrics = lrc
+        AppController.shared.useManualLyrics(lrc, for: track)
         if defaults[.writeToiTunesAutomatically] {
             AppController.shared.writeToiTunes(overwrite: true)
         }

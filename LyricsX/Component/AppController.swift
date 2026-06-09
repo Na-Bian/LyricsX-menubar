@@ -176,6 +176,11 @@ class AppController: NSObject {
             return
         }
 
+        if let manualLyrics = manualLyrics(for: track) {
+            currentLyrics = manualLyrics
+            return
+        }
+
         var candidateLyricsURL: [(URL, Bool, Bool)] = [] // (fileURL, isSecurityScoped, needsSearching)
 
         if defaults[.loadLyricsBesideTrack] {
@@ -312,6 +317,98 @@ class AppController: NSObject {
         lyrics.metadata.needsPersist = true
         currentLyrics = lyrics
     }
+
+    func useManualLyrics(_ lyrics: Lyrics, for track: MusicTrack) {
+        searchTask?.cancel()
+        searchTask = nil
+        searchRequest = nil
+        isSearchingLyrics = false
+        allowSearching(track)
+
+        lyrics.associateWithTrack(track)
+        lyrics.filtrate()
+        lyrics.recognizeLanguage()
+        lyrics.metadata.needsPersist = true
+        currentLyrics = lyrics
+
+        let fileName = manualLyricsFileName(for: track)
+        lyrics.persist(fileName: fileName)
+
+        var manualLyricsFileNames = defaults[.manualLyricsFileNamesByTrackID]
+        manualLyricsFileNames[track.id] = fileName
+        defaults[.manualLyricsFileNamesByTrackID] = manualLyricsFileNames
+    }
+
+    private func allowSearching(_ track: MusicTrack) {
+        if let index = defaults[.noSearchingTrackIds].firstIndex(of: track.id) {
+            defaults[.noSearchingTrackIds].remove(at: index)
+        }
+        if let index = defaults[.noSearchingAlbumNames].firstIndex(of: track.album ?? "") {
+            defaults[.noSearchingAlbumNames].remove(at: index)
+        }
+    }
+
+    private func manualLyrics(for track: MusicTrack) -> Lyrics? {
+        guard let fileName = defaults[.manualLyricsFileNamesByTrackID][track.id] else {
+            return nil
+        }
+
+        let (folderURL, security) = defaults.lyricsSavingPath()
+        let fileURL = folderURL.appendingPathComponent(fileName)
+        return loadLyrics(from: fileURL, security: security, for: track)
+    }
+
+    private func loadLyrics(from url: URL, security: Bool, for track: MusicTrack) -> Lyrics? {
+        if security {
+            guard url.startAccessingSecurityScopedResource() else {
+                return nil
+            }
+        }
+        defer {
+            if security {
+                url.stopAccessingSecurityScopedResource()
+            }
+        }
+
+        guard let lrcContents = try? String(contentsOf: url, encoding: .utf8),
+              let lyrics = Lyrics(lrcContents) else {
+            return nil
+        }
+
+        lyrics.metadata.localURL = url
+        lyrics.associateWithTrack(track)
+        lyrics.filtrate()
+        lyrics.recognizeLanguage()
+        return lyrics
+    }
+
+    private func manualLyricsFileName(for track: MusicTrack) -> String {
+        let title = sanitizedLyricsFileNameComponent(track.title, fallback: "Unknown")
+        let artist = sanitizedLyricsFileNameComponent(track.artist, fallback: "Unknown")
+        let trackID = sanitizedLyricsFileNameComponent(track.id, fallback: "\(title)-\(artist)")
+        let shortTrackID = String(trackID.prefix(48))
+        return "\(title) - \(artist) [manual-\(shortTrackID)].lrcx"
+    }
+
+    private func sanitizedLyricsFileNameComponent(_ string: String?, fallback: String) -> String {
+        guard let string else {
+            return fallback
+        }
+
+        let sanitized = string
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .map { character -> Character in
+                switch character {
+                case "/", ":", "\\", "\0":
+                    return "-"
+                default:
+                    return character
+                }
+            }
+
+        let value = String(sanitized).trimmingCharacters(in: .whitespacesAndNewlines)
+        return value.isEmpty ? fallback : value
+    }
 }
 
 extension AppController {
@@ -332,17 +429,6 @@ extension AppController {
             let error = NSError(domain: lyricsXErrorDomain, code: 0, userInfo: errorInfo)
             throw error
         }
-        lrc.metadata.title = track.title
-        lrc.metadata.artist = track.artist
-        lrc.filtrate()
-        lrc.recognizeLanguage()
-        lrc.metadata.needsPersist = true
-        currentLyrics = lrc
-        if let index = defaults[.noSearchingTrackIds].firstIndex(of: track.id) {
-            defaults[.noSearchingTrackIds].remove(at: index)
-        }
-        if let index = defaults[.noSearchingAlbumNames].firstIndex(of: track.album ?? "") {
-            defaults[.noSearchingAlbumNames].remove(at: index)
-        }
+        useManualLyrics(lrc, for: track)
     }
 }

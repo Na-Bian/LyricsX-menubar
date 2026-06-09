@@ -69,6 +69,7 @@ extension UserDefaults.DefaultsKeys {
     static let notifiedUpdateVersion = Key<String?>("NotifiedUpdateVersion")
     static let noSearchingTrackIds = Key<[String]>("NoSearchingTrackIds")
     static let noSearchingAlbumNames = Key<[String]>("NoSearchingAlbumNames")
+    static let manualLyricsFileNamesByTrackID = Key<[String: String]>("ManualLyricsFileNamesByTrackID")
 
     // Menu
     static let desktopLyricsEnabled = Key<Bool>("DesktopLyricsEnabled")

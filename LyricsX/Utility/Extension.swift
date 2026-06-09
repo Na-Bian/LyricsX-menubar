@@ -136,7 +136,7 @@ extension Lyrics {
         return "\(title) - \(artist).lrcx"
     }
 
-    func persist() {
+    func persist(fileName overrideFileName: String? = nil) {
         let (url, security) = defaults.lyricsSavingPath()
         if security {
             guard url.startAccessingSecurityScopedResource() else {
@@ -160,7 +160,7 @@ extension Lyrics {
                 try fileManager.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
             }
 
-            guard let lrcFileURL = fileName.map(url.appendingPathComponent) else {
+            guard let lrcFileURL = (overrideFileName ?? fileName).map(url.appendingPathComponent) else {
                 return
             }
 
