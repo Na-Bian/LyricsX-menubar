@@ -29,6 +29,8 @@ class AppController: NSObject {
     private var noLyricsRetryCounts: [String: Int] = [:]
     private let noLyricsRetryLimit = 1
     private let noLyricsRetryDelay: TimeInterval = 2
+    private var unavailableDisplayRetryCounts: [String: Int] = [:]
+    private let unavailableDisplayRetryLimit = 1
 
     private var cancelBag = Set<AnyCancellable>()
 
@@ -65,12 +67,16 @@ class AppController: NSObject {
                     NSApplication.shared.terminate(self)
                 }
             }.store(in: &cancelBag)
-        currentTrackChanged()
+        DispatchQueue.lyricsDisplay.async { [weak self] in
+            self?.currentTrackChanged()
+        }
 
         Task {
             try await updateLyricsManager()
             if currentLyrics == nil, selectedPlayer.currentTrack != nil {
-                currentTrackChanged()
+                DispatchQueue.lyricsDisplay.async { [weak self] in
+                    self?.currentTrackChanged()
+                }
             }
         }
     }
@@ -173,6 +179,7 @@ class AppController: NSObject {
         }
         let trackSearchKey = lyricsSearchKey(for: track)
         noLyricsRetryCounts[trackSearchKey] = 0
+        unavailableDisplayRetryCounts[trackSearchKey] = 0
         // FIXME: deal with optional value
         let title = track.title ?? ""
         let artist = track.artist ?? ""
@@ -253,6 +260,30 @@ class AppController: NSObject {
         }
 
         startLyricsSearch(for: track, searchKey: trackSearchKey)
+    }
+
+    func retryLyricsSearchForUnavailableMenuBar() {
+        guard let track = selectedPlayer.currentTrack else {
+            return
+        }
+
+        let searchKey = lyricsSearchKey(for: track)
+        guard selectedPlayer.currentTrack.map(lyricsSearchKey(for:)) == searchKey,
+              !isSearchingLyrics,
+              currentLyrics.map(hasDisplayableLyrics(_:)) != true,
+              !defaults[.noSearchingTrackIds].contains(track.id),
+              defaults[.noSearchingAlbumNames].contains(track.album ?? "") == false else {
+            return
+        }
+
+        let retryCount = unavailableDisplayRetryCounts[searchKey] ?? 0
+        guard retryCount < unavailableDisplayRetryLimit else {
+            return
+        }
+
+        unavailableDisplayRetryCounts[searchKey] = retryCount + 1
+        searchTask?.cancel()
+        startLyricsSearch(for: track, searchKey: searchKey)
     }
 
     private func startLyricsSearch(for track: MusicTrack, searchKey: String) {
@@ -435,6 +466,12 @@ class AppController: NSObject {
         let trackID = sanitizedLyricsFileNameComponent(track.id, fallback: "\(title)-\(artist)")
         let shortTrackID = String(trackID.prefix(48))
         return "\(title) - \(artist) [manual-\(shortTrackID)].lrcx"
+    }
+
+    private func hasDisplayableLyrics(_ lyrics: Lyrics) -> Bool {
+        lyrics.lines.contains { line in
+            line.enabled && !line.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
     }
 
     private func lyricsSearchKey(for track: MusicTrack) -> String {

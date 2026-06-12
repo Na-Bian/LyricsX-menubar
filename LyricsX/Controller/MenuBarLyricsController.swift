@@ -70,12 +70,14 @@ class MenuBarLyricsController {
                 updateScreenLyrics(to: MenuBarLyricsController.searchingLyric, duration: 2)
             } else {
                 showUnavailableLyrics()
+                AppController.shared.retryLyricsSearchForUnavailableMenuBar()
             }
             return
         }
 
         guard let (currentLine, currentIndex) = currentLine(from: lyrics, index: event.index) else {
             showUnavailableLyrics()
+            AppController.shared.retryLyricsSearchForUnavailableMenuBar()
             return
         }
 
