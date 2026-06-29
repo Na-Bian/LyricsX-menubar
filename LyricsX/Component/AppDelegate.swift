@@ -2,7 +2,6 @@ import AppKit
 import GenericID
 import MASShortcut
 import MusicPlayer
-import Sparkle
 import Semver
 
 @NSApplicationMain
@@ -15,8 +14,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, NSMenu
     @IBOutlet var lyricsOffsetTextField: NSTextField!
     @IBOutlet var lyricsOffsetStepper: NSStepper!
     @IBOutlet var statusBarMenu: NSMenu!
-
-    private lazy var updateController = SPUStandardUpdaterController(updaterDelegate: nil, userDriverDelegate: self)
 
     lazy var searchLyricsWC: SearchLyricsWindowController = .init()
 
@@ -67,8 +64,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, NSMenu
                 groupDefaults.set(currentValue, forKey: sharedKey.key)
             }
         }
-
-        updateController.updater.checkForUpdatesInBackground()
 
         disableNonMenuBarLyricsDisplays()
     }
@@ -140,9 +135,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, NSMenu
 
     @IBAction func aboutLyricsXAction(_ sender: Any) {
         if #available(OSX 10.13, *) {
-            let channel = "GitHub"
-            let versionString = "\(channel) Version \(Bundle.main.semanticVersion ?? "Unknown")"
-            NSApp.orderFrontStandardAboutPanel(options: [.applicationVersion: versionString])
+            let versionString = "菜单栏歌词版 \(Bundle.main.semanticVersion ?? "Unknown")"
+            let credits = NSAttributedString(
+                string: "基于开源 LyricsX 改写",
+                attributes: [
+                    .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize),
+                    .foregroundColor: NSColor.secondaryLabelColor,
+                ]
+            )
+            NSApp.orderFrontStandardAboutPanel(options: [
+                .applicationName: "LyricsX Menubar",
+                .applicationVersion: versionString,
+                .credits: credits,
+            ])
         } else {
             NSApp.orderFrontStandardAboutPanel(sender)
         }
@@ -159,10 +164,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, NSMenu
         } else {
             preferencesWindowController.showWindow(nil)
         }
-    }
-
-    @IBAction func checkUpdateAction(_ sender: Any) {
-        updateController.checkForUpdates(sender)
     }
 
     @IBAction func increaseOffset(_ sender: Any?) {
@@ -266,12 +267,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation, NSMenu
                 lyricsOffsetConstraint?.constant += 10
             }
         }
-    }
-}
-
-extension AppDelegate: SPUStandardUserDriverDelegate {
-    func standardUserDriverShouldHandleShowingScheduledUpdate(_ update: SUAppcastItem, andInImmediateFocus immediateFocus: Bool) -> Bool {
-        return true
     }
 }
 

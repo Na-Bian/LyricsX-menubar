@@ -36,7 +36,6 @@
                         <tabViewItem identifier="" image="NSFontPanel" id="8VI-6O-0Rn" userLabel="Display"/>
                         <tabViewItem image="toolbar_shortcut" id="MZ9-ON-TxW" userLabel="Shortcut"/>
                         <tabViewItem image="toolbar_filter" id="xcA-tm-q8A" userLabel="Filter"/>
-                        <tabViewItem image="toolbar_lab" id="Vr0-wO-OTg" userLabel="Lab"/>
                         <tabViewItem image="NSListViewTemplate" id="YeP-CD-LQP" userLabel="Source"/>
                     </tabViewItems>
                     <viewControllerTransitionOptions key="transitionOptions"/>
@@ -54,7 +53,6 @@
                         <segue destination="8JF-Og-z6E" kind="relationship" relationship="tabItems" id="ybT-iY-287"/>
                         <segue destination="1GH-DC-cpo" kind="relationship" relationship="tabItems" id="MY0-FE-Tv6"/>
                         <segue destination="lN1-gG-AVq" kind="relationship" relationship="tabItems" id="wPI-VX-th7"/>
-                        <segue destination="JPs-hn-m7d" kind="relationship" relationship="tabItems" id="1hg-lI-T8Z"/>
                         <segue destination="KTZ-mJ-lpY" kind="relationship" relationship="tabItems" id="rJ8-Fp-eFJ"/>
                     </connections>
                 </tabViewController>

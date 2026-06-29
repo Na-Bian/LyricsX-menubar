@@ -48,11 +48,6 @@ class MenuBarLyricsController {
             .receive(on: DispatchQueue.lyricsDisplay)
             .invoke(MenuBarLyricsController.handleLyricsDisplay, weaklyOn: self)
             .store(in: &cancelBag)
-        workspaceNC
-            .publisher(for: NSWorkspace.didActivateApplicationNotification)
-            .signal()
-            .invoke(MenuBarLyricsController.updateStatusItems, weaklyOn: self)
-            .store(in: &cancelBag)
         defaults.publisher(for: [.menuBarLyricsEnabled, .combinedMenubarLyrics, .menuBarLyricsWidth])
             .prepend()
             .invoke(MenuBarLyricsController.updateStatusItems, weaklyOn: self)

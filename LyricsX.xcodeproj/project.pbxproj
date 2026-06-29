@@ -54,7 +54,6 @@
 		BB947DFB23B4C60000C43BF2 /* SelectedPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB947DFA23B4C60000C43BF2 /* SelectedPlayer.swift */; };
 		BB9BCEBA1E843157001BC54B /* Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB9BCEB91E843157001BC54B /* Extension.swift */; };
 		BBA1B2C3D4E5F6A7B8C9D0E1 /* UserDefaultsMigrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA1B2C3D4E5F6A7B8C9D0E2 /* UserDefaultsMigrator.swift */; };
-		BBA82F0A256AB8620076831F /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = BBA82F09256AB8620076831F /* Sparkle */; };
 		BBB03F2D232FB3AF00A3879E /* GenericID in Frameworks */ = {isa = PBXBuildFile; productRef = BBB03F2C232FB3AF00A3879E /* GenericID */; };
 		BBB03F30232FB40400A3879E /* Semver in Frameworks */ = {isa = PBXBuildFile; productRef = BBB03F2F232FB40400A3879E /* Semver */; };
 		BBB03F3A2331D8A800A3879E /* OpenCC in Frameworks */ = {isa = PBXBuildFile; productRef = BBB03F392331D8A800A3879E /* OpenCC */; };
@@ -190,7 +189,6 @@
 				E9C4E2992AC9A10F004B9EB2 /* MASShortcut in Frameworks */,
 				E9EF0D512D6F5ECD00D45E0F /* UIFoundation in Frameworks */,
 				E9C4E29C2AC9A124004B9EB2 /* SnapKit in Frameworks */,
-				BBA82F0A256AB8620076831F /* Sparkle in Frameworks */,
 				E967A20C2D2AD6DB00982E06 /* LaunchAtLogin in Frameworks */,
 				BBB03F3A2331D8A800A3879E /* OpenCC in Frameworks */,
 				BBB03F30232FB40400A3879E /* Semver in Frameworks */,
@@ -423,7 +421,6 @@
 				BBB03F2F232FB40400A3879E /* Semver */,
 				BBB03F392331D8A800A3879E /* OpenCC */,
 				BB6C75E7248B908500804AEB /* TouchBarHelper */,
-				BBA82F09256AB8620076831F /* Sparkle */,
 				E9C4E2982AC9A10F004B9EB2 /* MASShortcut */,
 				E9C4E29B2AC9A124004B9EB2 /* SnapKit */,
 				E9C4E2A12AC9A3D6004B9EB2 /* SwiftCF */,
@@ -531,7 +528,6 @@
 				BBB03F2E232FB40400A3879E /* XCRemoteSwiftPackageReference "Semver" */,
 				BBB03F382331D8A800A3879E /* XCRemoteSwiftPackageReference "SwiftyOpenCC" */,
 				BB6C75E6248B908500804AEB /* XCRemoteSwiftPackageReference "TouchBarHelper" */,
-				BBA82F08256AB8620076831F /* XCRemoteSwiftPackageReference "Sparkle" */,
 				E9C4E2972AC9A10F004B9EB2 /* XCRemoteSwiftPackageReference "MASShortcut" */,
 				E9C4E29A2AC9A124004B9EB2 /* XCRemoteSwiftPackageReference "SnapKit" */,
 				E9C4E2A02AC9A3D6004B9EB2 /* XCRemoteSwiftPackageReference "SwiftCF" */,
@@ -1017,14 +1013,6 @@
 				minimumVersion = 0.1.0;
 			};
 		};
-		BBA82F08256AB8620076831F /* XCRemoteSwiftPackageReference "Sparkle" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/sparkle-project/Sparkle";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.0.0;
-			};
-		};
 		BBB03F2B232FB3AF00A3879E /* XCRemoteSwiftPackageReference "GenericID" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/MxIris-LyricsX-Project/GenericID";
@@ -1106,11 +1094,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = BB6C75E6248B908500804AEB /* XCRemoteSwiftPackageReference "TouchBarHelper" */;
 			productName = TouchBarHelper;
-		};
-		BBA82F09256AB8620076831F /* Sparkle */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = BBA82F08256AB8620076831F /* XCRemoteSwiftPackageReference "Sparkle" */;
-			productName = Sparkle;
 		};
 		BBB03F2C232FB3AF00A3879E /* GenericID */ = {
 			isa = XCSwiftPackageProductDependency;

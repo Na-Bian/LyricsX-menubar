@@ -350,16 +350,6 @@
                                 <action selector="aboutLyricsXAction:" target="Ady-hI-5gd" id="lXd-fE-0si"/>
                             </connections>
                         </menuItem>
-                        <menuItem title="Check For Update..." tag="401" id="Piu-i2-JjD">
-                            <modifierMask key="keyEquivalentModifierMask"/>
-                            <userDefinedRuntimeAttributes>
-                                <userDefinedRuntimeAttribute type="boolean" keyPath="isHiddenInMASVersion" value="YES"/>
-                                <userDefinedRuntimeAttribute type="boolean" keyPath="isHiddenDuringMASReview" value="YES"/>
-                            </userDefinedRuntimeAttributes>
-                            <connections>
-                                <action selector="checkUpdateAction:" target="Ady-hI-5gd" id="Ait-5g-99F"/>
-                            </connections>
-                        </menuItem>
                         <menuItem isSeparatorItem="YES" id="eB1-fb-ptE"/>
                         <menuItem title="Quit LyricsX" tag="500" keyEquivalent="q" id="RPR-IV-34T">
                             <connections>

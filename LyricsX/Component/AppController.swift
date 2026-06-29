@@ -25,12 +25,13 @@ class AppController: NSObject {
     @Published var isSearchingLyrics = false
 
     var searchRequest: LyricsSearchRequest?
+    private var searchKey: String?
     var searchTask: Task<Void, Never>?
     private var noLyricsRetryCounts: [String: Int] = [:]
-    private let noLyricsRetryLimit = 1
+    private let noLyricsRetryLimit = 2
     private let noLyricsRetryDelay: TimeInterval = 2
     private var unavailableDisplayRetryCounts: [String: Int] = [:]
-    private let unavailableDisplayRetryLimit = 1
+    private let unavailableDisplayRetryLimit = 2
 
     private var cancelBag = Set<AnyCancellable>()
 
@@ -173,6 +174,8 @@ class AppController: NSObject {
         currentLyrics = nil
         currentLineIndex = nil
         isSearchingLyrics = false
+        searchRequest = nil
+        searchKey = nil
         searchTask?.cancel()
         guard let track = selectedPlayer.currentTrack else {
             return
@@ -206,8 +209,10 @@ class AppController: NSObject {
                     }
                     lyrics.filtrate()
                     lyrics.recognizeLanguage()
-                    currentLyrics = lyrics
-                    return
+                    if hasDisplayableLyrics(lyrics) {
+                        currentLyrics = lyrics
+                        return
+                    }
                 }
             }
             if let fileName = track.localFileURL?.deletingPathExtension() {
@@ -246,6 +251,9 @@ class AppController: NSObject {
                 lyrics.metadata.artist = artist
                 lyrics.filtrate()
                 lyrics.recognizeLanguage()
+                guard hasDisplayableLyrics(lyrics) else {
+                    continue
+                }
                 currentLyrics = lyrics
                 if needsSearching {
                     break
@@ -292,10 +300,12 @@ class AppController: NSObject {
         let artist = track.artist ?? ""
         let request = LyricsSearchRequest(searchTerm: .info(title: title, artist: artist), duration: duration, limit: 5)
         searchRequest = request
+        self.searchKey = searchKey
         isSearchingLyrics = true
         searchTask = Task { @MainActor in
             defer {
-                if self.searchRequest == request {
+                if self.searchRequest == request,
+                   self.searchKey == searchKey {
                     self.isSearchingLyrics = false
                 }
             }
@@ -308,9 +318,15 @@ class AppController: NSObject {
                 var collectionStart: Date?
 
                 for try await lyrics in lyricsManager.lyrics(for: request) {
+                    guard selectedPlayer.currentTrack.map(lyricsSearchKey(for:)) == searchKey,
+                          self.searchRequest == request,
+                          self.searchKey == searchKey else {
+                        return
+                    }
+
                     if !firstReceived {
-                        lyricsReceived(lyrics: lyrics)
-                        if let current = currentLyrics, current === lyrics {
+                        let accepted = lyricsReceived(lyrics: lyrics)
+                        if accepted, let current = currentLyrics, current === lyrics {
                             firstReceived = true
                             collectionStart = Date()
                         }
@@ -327,7 +343,14 @@ class AppController: NSObject {
                     }
                 }
 
-                if defaults[.writeToiTunesAutomatically] {
+                guard selectedPlayer.currentTrack.map(lyricsSearchKey(for:)) == searchKey,
+                      self.searchRequest == request,
+                      self.searchKey == searchKey else {
+                    return
+                }
+
+                if defaults[.writeToiTunesAutomatically],
+                   currentLyrics.map(hasDisplayableLyrics(_:)) == true {
                     writeToiTunes(overwrite: true)
                 }
                 scheduleRetryIfNeeded(for: track, searchKey: searchKey)
@@ -342,7 +365,7 @@ class AppController: NSObject {
 
     @MainActor
     private func scheduleRetryIfNeeded(for track: MusicTrack, searchKey: String) {
-        guard currentLyrics == nil,
+        guard currentLyrics.map(hasDisplayableLyrics(_:)) != true,
               selectedPlayer.currentTrack.map(lyricsSearchKey(for:)) == searchKey,
               !defaults[.noSearchingTrackIds].contains(track.id),
               defaults[.noSearchingAlbumNames].contains(track.album ?? "") == false else {
@@ -357,7 +380,7 @@ class AppController: NSObject {
         noLyricsRetryCounts[searchKey] = retryCount + 1
         searchTask = Task { @MainActor in
             try? await Task.sleep(nanoseconds: UInt64(noLyricsRetryDelay * 1_000_000_000))
-            guard currentLyrics == nil,
+            guard currentLyrics.map(hasDisplayableLyrics(_:)) != true,
                   selectedPlayer.currentTrack.map(lyricsSearchKey(for:)) == searchKey else {
                 return
             }
@@ -367,30 +390,40 @@ class AppController: NSObject {
 
     // MARK: LyricsSourceDelegate
 
-    func lyricsReceived(lyrics: Lyrics) {
+    @discardableResult
+    func lyricsReceived(lyrics: Lyrics) -> Bool {
         guard let req = searchRequest,
               lyrics.metadata.request == req,
-              let track = selectedPlayer.currentTrack else {
-            return
+              let track = selectedPlayer.currentTrack,
+              selectedPlayer.currentTrack.map(lyricsSearchKey(for:)) == searchKey else {
+            return false
         }
         if defaults[.strictSearchEnabled], !lyrics.isMatched() {
-            return
-        }
-        if let current = currentLyrics, !lyricsHasHigherPriority(lyrics, over: current) {
-            return
+            return false
         }
 
         lyrics.associateWithTrack(track)
         lyrics.filtrate()
         lyrics.recognizeLanguage()
+        guard hasDisplayableLyrics(lyrics) else {
+            return false
+        }
+        if let current = currentLyrics,
+           hasDisplayableLyrics(current),
+           !lyricsHasHigherPriority(lyrics, over: current) {
+            return false
+        }
+
         lyrics.metadata.needsPersist = true
         currentLyrics = lyrics
+        return true
     }
 
     func useManualLyrics(_ lyrics: Lyrics, for track: MusicTrack) {
         searchTask?.cancel()
         searchTask = nil
         searchRequest = nil
+        searchKey = nil
         isSearchingLyrics = false
         allowSearching(track)
 
@@ -457,6 +490,9 @@ class AppController: NSObject {
         lyrics.associateWithTrack(track)
         lyrics.filtrate()
         lyrics.recognizeLanguage()
+        guard hasDisplayableLyrics(lyrics) else {
+            return nil
+        }
         return lyrics
     }
 
