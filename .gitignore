@@ -6,5 +6,6 @@ Scripts/release/bin/
 xcuserdata
 .claude
 .omc
+.superpowers/
 swift-syntax/.swiftpm
 MenuNest/
