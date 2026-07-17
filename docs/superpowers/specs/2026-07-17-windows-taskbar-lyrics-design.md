@@ -1,7 +1,7 @@
 # LyricsX Windows 11 Taskbar Lyrics — Design
 
 - **Date:** 2026-07-17
-- **Status:** Draft (awaiting user review)
+- **Status:** Approved by user
 - **Target:** Windows 11 x64
 - **UI stack:** C# / .NET 10 / WinUI 3 / Windows App SDK
 - **Distribution:** Unpackaged, self-contained application installed by a traditional EXE installer
