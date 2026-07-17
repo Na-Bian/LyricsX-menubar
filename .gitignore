@@ -7,5 +7,6 @@ xcuserdata
 .claude
 .omc
 .superpowers/
+.worktrees/
 swift-syntax/.swiftpm
 MenuNest/
