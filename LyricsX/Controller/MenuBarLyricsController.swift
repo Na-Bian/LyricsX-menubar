@@ -6,7 +6,6 @@ import MusicPlayer
 import OpenCC
 import SwiftCF
 import AccessibilityExt
-import MarqueeLabel
 
 class MenuBarLyricsController {
     static let shared = MenuBarLyricsController()
@@ -25,7 +24,11 @@ class MenuBarLyricsController {
         min(max(defaults[.menuBarLyricsWidth], 60), 240)
     }
 
-    private lazy var marqueeLabel = MarqueeLabel(frame: .init(x: 0, y: 0, width: lyricItemLength, height: 22))
+    private lazy var marqueeView = CrossfadeMarqueeView(
+        frame: .init(x: 0, y: 0, width: lyricItemLength, height: 22)
+    )
+    private let visibilityPolicy = MenuBarLyricsVisibilityPolicy()
+    private var pendingHideWorkItem: DispatchWorkItem?
 
     private static let defaultLyric = "LyricsX"
     private static let unavailableLyric = NSLocalizedString("No Available Lyrics", comment: "Menu bar text shown when the current track has no lyrics")
@@ -33,8 +36,8 @@ class MenuBarLyricsController {
 
     private var screenLyrics: (lyrics: String, duration: TimeInterval) = (MenuBarLyricsController.defaultLyric, 2) {
         didSet {
-            DispatchQueue.main.async {
-                self.updateStatusItems()
+            DispatchQueue.main.async { [weak self] in
+                self?.refreshLyricsText(animated: true)
             }
         }
     }
@@ -42,24 +45,43 @@ class MenuBarLyricsController {
     private var cancelBag = Set<AnyCancellable>()
 
     private init() {
-        updateStatusItems()
         AppController.shared.$currentLyrics
             .combineLatest(AppController.shared.$currentLineIndex, AppController.shared.$isSearchingLyrics)
             .receive(on: DispatchQueue.lyricsDisplay)
             .invoke(MenuBarLyricsController.handleLyricsDisplay, weaklyOn: self)
             .store(in: &cancelBag)
-        defaults.publisher(for: [.menuBarLyricsEnabled, .combinedMenubarLyrics, .menuBarLyricsWidth])
+
+        selectedPlayer.playbackStateWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                self?.reconcileVisibility(isPlaying: state.isPlaying)
+            }
+            .store(in: &cancelBag)
+
+        defaults.publisher(for: [.menuBarLyricsEnabled])
             .prepend()
-            .invoke(MenuBarLyricsController.updateStatusItems, weaklyOn: self)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.reconcileVisibility(
+                    isPlaying: selectedPlayer.playbackState.isPlaying
+                )
+            }
+            .store(in: &cancelBag)
+
+        defaults.publisher(for: [.combinedMenubarLyrics, .menuBarLyricsWidth])
+            .prepend()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshLyricStatusItemLayout()
+            }
             .store(in: &cancelBag)
     }
 
-    private func handleLyricsDisplay(event: (lyrics: Lyrics?, index: Int?, isSearching: Bool)) {
-        guard !defaults[.disableLyricsWhenPaused] || selectedPlayer.playbackState.isPlaying else {
-            showUnavailableLyrics()
-            return
-        }
+    deinit {
+        pendingHideWorkItem?.cancel()
+    }
 
+    private func handleLyricsDisplay(event: (lyrics: Lyrics?, index: Int?, isSearching: Bool)) {
         guard let lyrics = event.lyrics else {
             if event.isSearching {
                 updateScreenLyrics(to: MenuBarLyricsController.searchingLyric, duration: 2)
@@ -118,33 +140,104 @@ class MenuBarLyricsController {
         screenLyrics = (lyrics, duration)
     }
 
-    @objc private func updateStatusItems() {
-        guard defaults[.menuBarLyricsEnabled] else {
-            removeLyricStatusItem()
-            if iconStatusItem == nil {
-                setupIconStatusItem()
-            }
-            return
+    private func reconcileVisibility(isPlaying: Bool) {
+        precondition(Thread.isMainThread)
+        let action = visibilityPolicy.action(
+            isEnabled: defaults[.menuBarLyricsEnabled],
+            isPlaying: isPlaying,
+            isShowingLyrics: lyricStatusItem != nil
+        )
+        applyVisibilityAction(action)
+    }
+
+    private func applyVisibilityAction(
+        _ action: MenuBarLyricsVisibilityAction
+    ) {
+        switch action {
+        case .showIcon:
+            cancelPendingHide()
+            showIconStatusItem()
+        case .showLyrics:
+            cancelPendingHide()
+            showLyricStatusItem()
+        case .scheduleHide(let delay):
+            scheduleHide(after: delay)
         }
+    }
 
+    private func scheduleHide(after delay: TimeInterval) {
+        cancelPendingHide()
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else {
+                return
+            }
+            self.pendingHideWorkItem = nil
+            self.applyVisibilityAction(
+                self.visibilityPolicy.actionAfterHideDelay(
+                    isEnabled: defaults[.menuBarLyricsEnabled],
+                    isPlaying: selectedPlayer.playbackState.isPlaying
+                )
+            )
+        }
+        pendingHideWorkItem = workItem
+        DispatchQueue.main.asyncAfter(
+            deadline: .now() + delay,
+            execute: workItem
+        )
+    }
+
+    private func cancelPendingHide() {
+        pendingHideWorkItem?.cancel()
+        pendingHideWorkItem = nil
+    }
+
+    private func showIconStatusItem() {
+        removeLyricStatusItem()
+        if iconStatusItem == nil {
+            setupIconStatusItem()
+        }
+    }
+
+    private func showLyricStatusItem() {
         removeIconStatusItem()
-
         if lyricStatusItem == nil {
             setupLyricStatusItem()
+            refreshLyricsText(animated: false)
+        } else {
+            refreshLyricStatusItemLayout()
         }
-        updateLyricItemWidth()
-        marqueeLabel.setStringValue(screenLyrics.lyrics, lineDisplayTime: screenLyrics.duration)
+    }
+
+    private func refreshLyricsText(animated: Bool) {
+        guard lyricStatusItem != nil else {
+            return
+        }
+        marqueeView.setStringValue(
+            screenLyrics.lyrics,
+            lineDisplayTime: screenLyrics.duration,
+            animated: animated
+        )
+    }
+
+    private func refreshLyricStatusItemLayout() {
+        guard lyricStatusItem != nil else {
+            return
+        }
+        let width = lyricItemLength
+        lyricStatusItem?.length = width
+        marqueeView.frame = .init(x: 0, y: 0, width: width, height: 22)
+        lyricStatusItem?.button?.frame = marqueeView.bounds
     }
 
     private func setupLyricStatusItem() {
-        marqueeLabel.removeFromSuperview()
+        marqueeView.removeFromSuperview()
         lyricStatusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         lyricStatusItem?.button?.title = ""
         lyricStatusItem?.button?.image = nil
         lyricStatusItem?.length = lyricItemLength
-        marqueeLabel.frame = .init(x: 0, y: 0, width: lyricItemLength, height: 22)
-        lyricStatusItem?.button?.frame = marqueeLabel.bounds
-        lyricStatusItem?.button?.addSubview(marqueeLabel)
+        marqueeView.frame = .init(x: 0, y: 0, width: lyricItemLength, height: 22)
+        lyricStatusItem?.button?.frame = marqueeView.bounds
+        lyricStatusItem?.button?.addSubview(marqueeView)
         setupStatusItemMenu()
     }
 
@@ -164,18 +257,12 @@ class MenuBarLyricsController {
     }
 
     private func removeLyricStatusItem() {
-        marqueeLabel.removeFromSuperview()
+        marqueeView.stopAnimations()
+        marqueeView.removeFromSuperview()
         if let lyricStatusItem {
             NSStatusBar.system.removeStatusItem(lyricStatusItem)
         }
         lyricStatusItem = nil
-    }
-
-    private func updateLyricItemWidth() {
-        let width = lyricItemLength
-        lyricStatusItem?.length = width
-        marqueeLabel.frame = .init(x: 0, y: 0, width: width, height: 22)
-        lyricStatusItem?.button?.frame = marqueeLabel.bounds
     }
 
     private func setupStatusItemMenu() {
