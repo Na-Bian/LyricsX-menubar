@@ -2,7 +2,7 @@ public enum CrossfadeTextUpdate: Equatable, Sendable {
     case noChange
     case replace
     case begin
-    case updateIncoming
+    case restart
 }
 
 public struct CrossfadeTextTransitionState: Equatable, Sendable {
@@ -17,22 +17,24 @@ public struct CrossfadeTextTransitionState: Equatable, Sendable {
         to text: String,
         animated: Bool
     ) -> CrossfadeTextUpdate {
-        if incomingText == text || incomingText == nil && displayedText == text {
+        let renderableText = text.isEmpty ? " " : text
+
+        if incomingText == renderableText || incomingText == nil && displayedText == renderableText {
             return .noChange
         }
 
         guard animated, displayedText != nil else {
-            displayedText = text
+            displayedText = renderableText
             incomingText = nil
             return .replace
         }
 
         if incomingText != nil {
-            incomingText = text
-            return .updateIncoming
+            incomingText = renderableText
+            return .restart
         }
 
-        incomingText = text
+        incomingText = renderableText
         return .begin
     }
 

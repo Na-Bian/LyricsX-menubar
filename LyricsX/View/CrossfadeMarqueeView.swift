@@ -40,6 +40,9 @@ final class CrossfadeMarqueeView: NSView {
         let shouldAnimate = animated
             && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         let update = transitionState.update(to: value, animated: shouldAnimate)
+        let renderableValue = transitionState.incomingText
+            ?? transitionState.displayedText
+            ?? value
 
         switch update {
         case .noChange:
@@ -47,18 +50,15 @@ final class CrossfadeMarqueeView: NSView {
                 ? currentContentLabel
                 : incomingContentLabel
             contentLabel.setStringValue(
-                value,
+                renderableValue,
                 lineDisplayTime: lineDisplayTime
             )
         case .replace:
-            renderImmediately(value, lineDisplayTime: lineDisplayTime)
+            renderImmediately(renderableValue, lineDisplayTime: lineDisplayTime)
         case .begin:
-            beginCrossfade(value, lineDisplayTime: lineDisplayTime)
-        case .updateIncoming:
-            incomingContentLabel.setStringValue(
-                value,
-                lineDisplayTime: lineDisplayTime
-            )
+            beginCrossfade(renderableValue, lineDisplayTime: lineDisplayTime)
+        case .restart:
+            restartCrossfade(renderableValue, lineDisplayTime: lineDisplayTime)
         }
     }
 
@@ -124,5 +124,16 @@ final class CrossfadeMarqueeView: NSView {
             outgoingLabel.alphaValue = 0
             incomingLabel.alphaValue = 1
         }
+    }
+
+    private func restartCrossfade(
+        _ value: String,
+        lineDisplayTime: TimeInterval
+    ) {
+        transitionGeneration &+= 1
+        labels.forEach { $0.layer?.removeAllAnimations() }
+        currentContentLabel.alphaValue = 1
+        incomingContentLabel.alphaValue = 0
+        beginCrossfade(value, lineDisplayTime: lineDisplayTime)
     }
 }
