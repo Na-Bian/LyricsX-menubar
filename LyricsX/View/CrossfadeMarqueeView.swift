@@ -64,10 +64,12 @@ final class CrossfadeMarqueeView: NSView {
 
     func stopAnimations() {
         transitionGeneration &+= 1
-        labels.forEach { label in
-            label.layer?.removeAllAnimations()
-            label.alphaValue = 0
+        labels.forEach { $0.layer?.removeAllAnimations() }
+        if transitionState.incomingText != nil {
+            activeIndex = 1 - activeIndex
+            transitionState.completeTransition()
         }
+        labels.forEach { $0.alphaValue = 0 }
         labels[activeIndex].alphaValue = 1
     }
 
