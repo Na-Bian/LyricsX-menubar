@@ -63,7 +63,7 @@ xcodebuild \
     -archivePath "$ARCHIVE_PATH" \
     -skipMacroValidation \
     -skipPackagePluginValidation \
-    "${AUTH_ARGS[@]}" \
+    ${AUTH_ARGS[@]+"${AUTH_ARGS[@]}"} \
     CODE_SIGN_STYLE=Automatic \
     DEVELOPMENT_TEAM="$TEAM_ID" \
     OTHER_CODE_SIGN_FLAGS="--timestamp" \
@@ -75,7 +75,7 @@ xcodebuild \
     -archivePath "$ARCHIVE_PATH" \
     -exportOptionsPlist ExportOptions.plist \
     -exportPath "$EXPORT_PATH" \
-    "${AUTH_ARGS[@]}"
+    ${AUTH_ARGS[@]+"${AUTH_ARGS[@]}"}
 
 if [ ! -d "${EXPORT_PATH}/LyricsX.app" ]; then
     die "Export did not produce ${EXPORT_PATH}/LyricsX.app"
