@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Create a published GitHub Release and upload both artifact zips.
+# Create a published GitHub Release and upload the release artifacts.
 #
 # Inputs (env):
 #   VERSION, BUILD, IS_PRERELEASE
@@ -15,10 +15,12 @@ cd "$(repo_root)"
 require_env VERSION BUILD IS_PRERELEASE
 
 APP_ZIP="build/LyricsX_${VERSION}+${BUILD}.zip"
+APP_DMG="build/LyricsX_${VERSION}+${BUILD}.dmg"
 DSYMS_ZIP="build/LyricsX_${VERSION}+${BUILD}.dSYMs.zip"
 BODY="build/body.md"
 
 [ -f "$APP_ZIP" ]   || die "Missing ${APP_ZIP}"
+[ -f "$APP_DMG" ]   || die "Missing ${APP_DMG}"
 [ -f "$DSYMS_ZIP" ] || die "Missing ${DSYMS_ZIP}"
 [ -f "$BODY" ]      || die "Missing ${BODY}"
 
@@ -36,6 +38,7 @@ gh release create "v${VERSION}" \
     --title "LyricsX ${VERSION}" \
     --notes-file "$BODY" \
     "$APP_ZIP" \
+    "$APP_DMG" \
     "$DSYMS_ZIP"
 
 log_info "Published release v${VERSION}. Enclosure URL is now anonymously reachable."
