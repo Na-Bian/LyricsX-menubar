@@ -173,4 +173,32 @@ Run `hdiutil verify`, attach read-only, and assert the mounted root contains `Ly
 
 - [ ] **Step 4: Commit any verification-only fix and report artifact path**
 
-If no fixes are needed, report the generated DMG path and verification output. Do not publish a new GitHub Release automatically unless explicitly requested.
+If no fixes are needed, report the generated DMG path and verification output.
+
+### Task 4: Replace the existing community prerelease
+
+**Files:**
+- No source changes expected.
+
+- [ ] **Step 1: Push the verified commits to main**
+
+Push only committed DMG UI changes; the four user-owned unstaged project files remain local and unstaged.
+
+- [ ] **Step 2: Remove the existing release and tag**
+
+After confirming the current tag is exactly `v1.8.5-community.1`, run:
+
+```bash
+gh release delete v1.8.5-community.1 --repo Na-Bian/LyricsX-menubar --cleanup-tag --yes
+```
+
+- [ ] **Step 3: Re-run Community Release**
+
+Trigger `.github/workflows/community-release.yml` on `main` with
+`version=1.8.5-community.1` and monitor it to a terminal result.
+
+- [ ] **Step 4: Verify the replacement release**
+
+Confirm the prerelease tag targets the new DMG UI commit, all four assets are present,
+checksums validate, and the downloaded DMG contains the branded background,
+`LyricsX.app`, and the `/Applications` symlink.
