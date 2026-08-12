@@ -24,7 +24,10 @@ BODY="build/body.md"
 command -v gh >/dev/null 2>&1 || die 'GitHub CLI (gh) is required'
 
 log_info "Generating checksums"
-shasum -a 256 "$APP_ZIP" "$APP_DMG" > "$CHECKSUM"
+(
+    cd build
+    shasum -a 256 "$(basename "$APP_ZIP")" "$(basename "$APP_DMG")"
+) > "$CHECKSUM"
 
 log_info "Verifying ${APP_DMG}"
 hdiutil verify "$APP_DMG"

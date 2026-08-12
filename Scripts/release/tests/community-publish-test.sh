@@ -93,6 +93,13 @@ grep -Fq "LyricsX_${VERSION}+${BUILD}.dmg" "$CHECKSUM" \
 if grep -Fq 'dSYMs.zip' "$CHECKSUM"; then
     fail 'dSYMs must not appear in the end-user checksum file'
 fi
+if grep -Fq 'build/' "$CHECKSUM"; then
+    fail 'Checksum entries must use asset basenames, not build/ paths'
+fi
+(
+    cd "${FIXTURE}/build"
+    shasum -a 256 -c "$(basename "$CHECKSUM")" >/dev/null
+) || fail 'Checksum file must validate assets downloaded into one directory'
 
 GH_ARGS="${CAPTURE}/gh.with-target.args"
 for expected in \
