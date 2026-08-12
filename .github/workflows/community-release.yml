@@ -1,0 +1,52 @@
+name: Community Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Community version (e.g. 1.8.5-community.1)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-26
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.4.app/Contents/Developer
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve community version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash Scripts/release/community-resolve-version.sh
+
+      - name: Build community app
+        run: bash Scripts/release/community-build.sh
+
+      - name: Package app
+        run: bash Scripts/release/package.sh
+
+      - name: Compose community release notes
+        run: bash Scripts/release/community-compose-notes.sh
+
+      - name: Create community prerelease
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash Scripts/release/community-create-release.sh
+
+      - name: Upload build diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: community-release-build
+          path: build/
+          if-no-files-found: ignore
+          retention-days: 7
