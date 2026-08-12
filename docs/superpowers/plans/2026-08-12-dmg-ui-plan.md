@@ -6,7 +6,7 @@
 
 **Architecture:** Keep `Scripts/release/package.sh` as the packaging entry point. Add a focused `community-dmg-layout.sh` helper that stages a static background and applies Finder metadata to a mounted read-write image when Finder scripting is available; any visual configuration failure is non-fatal. Package through a temporary UDRW image and convert it to UDZO only after the layout attempt, then extend the existing DMG contract test and retain real hdiutil mount verification.
 
-**Tech Stack:** Bash 3.2, macOS `sips`, `osascript`, `hdiutil`, `ditto`, Finder `.DS_Store` metadata, static PNG assets.
+**Tech Stack:** Bash 3.2, macOS `sips`, `osascript`, `hdiutil`, `ditto`, Finder `.DS_Store` metadata, 2× Retina PNG assets.
 
 ## Global Constraints
 
@@ -47,7 +47,7 @@ Expected: non-zero because `community-dmg-layout.sh` and the background resource
 
 - [ ] **Step 3: Create a static background**
 
-Create a deterministic 640×400 SVG with a white/light-gray canvas, a restrained LyricsX blue-purple gradient accent, exact `LYRICS FOR YOUR MENUBAR` and `drag to` text, and reserved empty areas for the Finder icons. Convert it to a static PNG with the available macOS image tools. Do not include JetBrains artwork or copied wording; the actual app and Applications labels come from Finder.
+Create a deterministic 640×400 logical SVG with a white/light-gray canvas, a restrained LyricsX blue-purple gradient accent, exact `LYRICS FOR YOUR MENUBAR` and `drag to` text, and reserved empty areas for the Finder icons. Render it natively to a 1280×800 PNG with 144 DPI metadata. Do not include JetBrains artwork or copied wording; the actual app and Applications labels come from Finder.
 
 - [ ] **Step 4: Implement the helper**
 
@@ -60,7 +60,7 @@ mkdir -p "$BACKGROUND_DIR"
 ditto "${HERE}/dmg-assets/LyricsX-dmg-background.png" "$BACKGROUND_DIR/LyricsX-dmg-background.png"
 ```
 
-`apply` receives the mounted read-write volume. If `/usr/bin/osascript` is available, attempt to set Finder window bounds, icon positions, icon size, and background image through Finder scripting. If the command fails, log a warning and return success. The canvas is 640×400, with `LyricsX.app` around `(165, 220)` and `Applications` around `(475, 220)`.
+`apply` receives the mounted read-write volume. If `/usr/bin/osascript` is available, identify the Finder disk by the basename of the custom mount point, then use explicit `targetDisk`, `targetWindow`, and `viewOptions` references to set window bounds, icon positions, icon size, and background image. If the command fails, log a warning and return success. The canvas is 640×400 points backed by a 1280×800 Retina PNG, with `LyricsX.app` at `(165, 220)` and `Applications` at `(475, 220)`.
 
 - [ ] **Step 5: Run the test and syntax check**
 

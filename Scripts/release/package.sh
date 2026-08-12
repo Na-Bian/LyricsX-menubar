@@ -19,7 +19,7 @@ APP_DMG="build/LyricsX_${VERSION}+${BUILD}.dmg"
 DSYMS_ZIP="build/LyricsX_${VERSION}+${BUILD}.dSYMs.zip"
 DMG_STAGE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/LyricsX.dmg.XXXXXX")"
 DMG_MOUNT_DIR="$(mktemp -d "${TMPDIR:-/tmp}/LyricsX.mount.XXXXXX")"
-DMG_RW="build/LyricsX.dmg.rw"
+DMG_RW="build/LyricsX.rw.dmg"
 DMG_ATTACHED=0
 
 cleanup() {

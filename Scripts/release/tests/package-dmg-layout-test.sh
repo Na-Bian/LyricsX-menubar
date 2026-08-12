@@ -23,8 +23,8 @@ grep -Fq 'ln -s /Applications "$DMG_STAGE_DIR/Applications"' "$PACKAGE_SCRIPT" \
     || fail "package.sh must stage an Applications symlink"
 grep -Fq 'community-dmg-layout.sh" prepare "$DMG_STAGE_DIR"' "$PACKAGE_SCRIPT" \
     || fail "package.sh must stage the branded DMG layout"
-grep -Fq 'DMG_RW="build/LyricsX.dmg.rw"' "$PACKAGE_SCRIPT" \
-    || fail "package.sh must declare a writable DMG image"
+grep -Fq 'DMG_RW="build/LyricsX.rw.dmg"' "$PACKAGE_SCRIPT" \
+    || fail "package.sh must use an explicit .dmg suffix for the writable image"
 grep -Fq 'DMG_MOUNT_DIR="$(mktemp -d' "$PACKAGE_SCRIPT" \
     || fail "package.sh must declare a DMG mount directory"
 grep -Fq 'hdiutil create -volname "LyricsX" -srcfolder "$DMG_STAGE_DIR" -ov -format UDRW "$DMG_RW"' "$PACKAGE_SCRIPT" \
