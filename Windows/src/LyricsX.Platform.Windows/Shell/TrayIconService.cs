@@ -22,13 +22,22 @@ public sealed class TrayIconService : ITrayIconService
     private const int NIM_ADD = 0x0000;
     private const int NIM_MODIFY = 0x0001;
     private const int NIM_DELETE = 0x0002;
+    private const int NIM_SETVERSION = 0x0004;
     private const int NOTIFYICON_VERSION_4 = 4;
     private const uint NIF_MESSAGE = 0x0001;
     private const uint NIF_ICON = 0x0002;
     private const uint NIF_TIP = 0x0004;
     private const uint NIF_GUID = 0x0080;
 
-    private readonly Guid iconGuid = Guid.NewGuid();
+    // NOTIFYICON_VERSION_4 notification events (LOWORD of lParam)
+    private const ushort NIN_SELECT_V4 = 0x0400;
+    private const ushort WM_LBUTTONUP_V4 = 0x0202;
+    private const ushort WM_CONTEXTMENU_V4 = 0x007B;
+
+    // stable per-install GUID: survives Explorer restarts so the shell can
+    // reuse/clean the same icon slot
+    private static readonly Guid iconGuid =
+        new("2E5A9D3B-7C42-4F6E-9D18-A53B7F2C8E01");
     private readonly nint messageWindow;
     private uint taskbarCreatedMessage;
     private bool visible;
@@ -46,10 +55,16 @@ public sealed class TrayIconService : ITrayIconService
     public void Show()
     {
         var data = BuildNotifyIconData();
-        data.uVersion = NOTIFYICON_VERSION_4;
         if (!NativeMethods.ShellNotifyIcon(NIM_ADD, ref data))
         {
             throw new Win32Exception("Shell_NotifyIcon NIM_ADD failed");
+        }
+
+        data.uVersion = NOTIFYICON_VERSION_4;
+        if (!NativeMethods.ShellNotifyIcon(NIM_SETVERSION, ref data))
+        {
+            // version 4 callback format unavailable: keep the icon, events
+            // fall back to no-op rather than misfiring
         }
 
         visible = true;
@@ -83,10 +98,10 @@ public sealed class TrayIconService : ITrayIconService
             var notification = (ushort)(lParam.ToInt64() & 0xFFFF);
             switch (notification)
             {
-                case 0x0000 or 0x0002: // NIN_SELECT or WM_LBUTTONUP: open preferences
+                case NIN_SELECT_V4 or WM_LBUTTONUP_V4:
                     OpenPreferencesRequested?.Invoke(this, EventArgs.Empty);
                     break;
-                case 0x0005 or 0x0086: // WM_XBUTTONUP or WM_CONTEXTMENU: exit path
+                case WM_CONTEXTMENU_V4:
                     ExitRequested?.Invoke(this, EventArgs.Empty);
                     break;
             }
@@ -102,6 +117,7 @@ public sealed class TrayIconService : ITrayIconService
         uID = 1,
         uFlags = NIF_MESSAGE | NIF_TIP | NIF_GUID,
         uCallbackMessage = 0x8F00, // WM_APP-range tray callback
+        hIcon = NativeMethods.LoadIcon(nint.Zero, NativeMethods.IDI_APPLICATION),
         guidItem = iconGuid,
         szTip = "LyricsX"
     };

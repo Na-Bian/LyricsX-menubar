@@ -33,7 +33,8 @@ public sealed class GsmtcMapperTests
         Assert.AreEqual(TimeSpan.FromSeconds(201), snapshot.Track.Duration);
         Assert.AreEqual(1.0, snapshot.Rate);
         Assert.AreEqual(Now, snapshot.LastUpdatedAt);
-        Assert.AreEqual("s1-native", (string)snapshot.NativeSession);
+        // without an explicit native session the id itself is retained
+        Assert.AreEqual("s1", (string)snapshot.NativeSession);
     }
 
     [TestMethod]

@@ -20,7 +20,8 @@ public static class GsmtcMapper
         string? album,
         double positionSeconds,
         double timelineEndSeconds,
-        DateTimeOffset lastUpdatedAt)
+        DateTimeOffset lastUpdatedAt,
+        object? nativeSession = null)
     {
         TimeSpan? duration = timelineEndSeconds > 0
             ? TimeSpan.FromSeconds(timelineEndSeconds)
@@ -46,7 +47,7 @@ public static class GsmtcMapper
             Position: TimeSpan.FromSeconds(Math.Max(0, positionSeconds)),
             Rate: 1.0,
             LastUpdatedAt: lastUpdatedAt,
-            NativeSession: sessionId + "-native");
+            NativeSession: nativeSession ?? sessionId);
     }
 
     private static PlaybackStatus MapStatus(GlobalPlaybackStatus status) => status switch

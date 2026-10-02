@@ -110,6 +110,11 @@ internal static partial class NativeMethods
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static partial bool IsWindowVisible(nint window);
 
+    internal static readonly nint IDI_APPLICATION = new(32512);
+
+    [LibraryImport("user32.dll", EntryPoint = "LoadIconW")]
+    internal static partial nint LoadIcon(nint instance, nint iconName);
+
     [LibraryImport("user32.dll", EntryPoint = "RegisterHotKey", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static partial bool RegisterHotKey(nint window, int id, uint modifiers, uint virtualKey);

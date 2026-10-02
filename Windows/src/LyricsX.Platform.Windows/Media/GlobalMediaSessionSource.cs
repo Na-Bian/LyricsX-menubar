@@ -50,7 +50,8 @@ public sealed class GlobalMediaSessionSource : IMediaSessionSource
                     album: media.AlbumTitle,
                     positionSeconds: timeline.Position.TotalSeconds,
                     timelineEndSeconds: timeline.EndTime.TotalSeconds,
-                    lastUpdatedAt: DateTimeOffset.UtcNow));
+                    lastUpdatedAt: DateTimeOffset.UtcNow,
+                    nativeSession: session));
             }
             catch (OperationCanceledException)
             {

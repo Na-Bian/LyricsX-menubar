@@ -47,13 +47,24 @@ public sealed class TaskbarPlacementService(
             {
                 var pollTask = Task.Delay(pollInterval, cancellationToken);
                 var wakeTask = wakeSignal.WaitAsync(cancellationToken);
+                Task completed;
                 try
                 {
-                    await Task.WhenAny(pollTask, wakeTask);
+                    completed = await Task.WhenAny(pollTask, wakeTask);
                 }
                 catch (OperationCanceledException)
                 {
                     return;
+                }
+
+                if (completed == wakeTask)
+                {
+                    // drain the signal so stale waiters never accumulate: the
+                    // next iteration recreates both waiters from scratch
+                    while (wakeSignal.CurrentCount > 0)
+                    {
+                        _ = await wakeSignal.WaitAsync(0, cancellationToken);
+                    }
                 }
 
                 try

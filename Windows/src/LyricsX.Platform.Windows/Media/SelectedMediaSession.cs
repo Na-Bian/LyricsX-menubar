@@ -16,6 +16,7 @@ public sealed class SelectedMediaSession(
 
     private readonly SemaphoreSlim refreshGate = new(1, 1);
     private int refreshRequested;
+    private int disposed;
     private PlaybackSnapshot current = new(null, PlaybackStatus.Closed, TimeSpan.Zero, 1.0, DateTimeOffset.UtcNow);
     private string? previousSessionId;
 
@@ -25,14 +26,25 @@ public sealed class SelectedMediaSession(
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        ObjectDisposedException.ThrowIf(disposed != 0, this);
+        source.SessionsChanged -= OnSessionsChanged; // StartAsync stays idempotent
         source.SessionsChanged += OnSessionsChanged;
         await RefreshAsync(cancellationToken);
     }
 
     public async ValueTask DisposeAsync()
     {
+        Interlocked.Exchange(ref disposed, 1);
         source.SessionsChanged -= OnSessionsChanged;
-        refreshGate.Dispose();
+        await refreshGate.WaitAsync();
+        try
+        {
+            refreshGate.Dispose();
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+
         await ValueTask.CompletedTask;
     }
 
@@ -43,7 +55,8 @@ public sealed class SelectedMediaSession(
 
     private async Task RefreshAsync(CancellationToken cancellationToken)
     {
-        if (!await refreshGate.WaitAsync(0, cancellationToken))
+        if (disposed != 0 ||
+            !await refreshGate.WaitAsync(0, cancellationToken))
         {
             Interlocked.Exchange(ref refreshRequested, 1);
             return;
@@ -62,6 +75,13 @@ public sealed class SelectedMediaSession(
                 await RefreshCoreAsync(cancellationToken);
             }
             while (Interlocked.Exchange(ref refreshRequested, 0) == 1);
+
+            // a request may have landed between the loop exit and the release:
+            // re-run once so the final burst event (e.g. pause) is never lost
+            if (Interlocked.Exchange(ref refreshRequested, 0) == 1 && disposed == 0)
+            {
+                await RefreshCoreAsync(cancellationToken);
+            }
         }
         catch (OperationCanceledException)
         {

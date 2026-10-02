@@ -23,6 +23,7 @@ public sealed class WindowsCredentialStore(string targetPrefix = "LyricsX/Spotif
             var targetChars = target.ToCharArray();
             var targetBuffer = new LocalAllocBuffer((targetChars.Length + 1) * 2);
             Marshal.Copy(targetChars, 0, targetBuffer.Pointer, targetChars.Length);
+            Marshal.WriteInt16(targetBuffer.Pointer, targetChars.Length * 2, 0);
             using var blobBuffer = new ZeroableBuffer(Marshal.AllocHGlobal(blob.Length), blob.Length);
             Marshal.Copy(blob, 0, blobBuffer.Pointer, blob.Length);
 
