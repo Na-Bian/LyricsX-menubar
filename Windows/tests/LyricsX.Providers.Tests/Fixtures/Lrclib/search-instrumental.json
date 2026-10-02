@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "name": "Instrumental Piece",
+    "trackName": "Instrumental Piece",
+    "artistName": "Test Artist",
+    "albumName": null,
+    "duration": 100.0,
+    "instrumental": true,
+    "plainLyrics": "plain text only",
+    "syncedLyrics": null
+  },
+  {
+    "id": 2,
+    "name": "Plain Only",
+    "trackName": "Plain Only",
+    "artistName": "Test Artist",
+    "albumName": null,
+    "duration": 100.0,
+    "instrumental": false,
+    "plainLyrics": "plain text only",
+    "syncedLyrics": null
+  }
+]

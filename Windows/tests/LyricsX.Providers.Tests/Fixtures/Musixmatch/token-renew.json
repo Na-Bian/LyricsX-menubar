@@ -1,0 +1,6 @@
+{
+  "message": {
+    "header": { "status_code": 401, "hint": "renew" },
+    "body": null
+  }
+}

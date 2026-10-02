@@ -1,0 +1,10 @@
+{
+  "status": 1,
+  "error": "",
+  "errcode": 0,
+  "data": {
+    "info": [
+      { "hash": "abc123hash", "album_id": "9", "album_audio_id": 70123456, "trans_param": { "union_cover": null } }
+    ]
+  }
+}

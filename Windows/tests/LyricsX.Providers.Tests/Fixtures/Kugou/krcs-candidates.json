@@ -1,0 +1,6 @@
+{
+  "status": 200,
+  "candidates": [
+    { "id": "601234789", "accesskey": "A7B8C9D0E1F2", "song": "晴天", "singer": "测试歌手", "duration": 269000 }
+  ]
+}

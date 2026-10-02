@@ -11,12 +11,13 @@
 ## Global Constraints
 
 - Complete plans 01 and 02 first.
-- The app is unpackaged, full-trust, self-contained, x64, and per-user.
+- The app is unpackaged, full-trust, self-contained (`win-x64` and `win-arm64`), and per-user. Publish with the RID matching the target machine.
 - Do not add a Lab/Experimental page or copy macOS-only Touch Bar, AppleScript, Sparkle, or metadata-writing controls.
 - Use the approved wording `偏好设置…`.
 - Left click opens the compact menu. Right click opens the full menu. The tray opens the same full menu.
 - Every command must be reachable by keyboard and expose a meaningful AutomationProperties name.
 - The taskbar lyric window must not activate; preferences and manual search are normal activatable windows.
+- The Spotify connection flow must implement the loopback listener (`http://127.0.0.1:<ephemeral-port>/callback/`) and browser launch here; `LyricsX.Providers` exposes `BuildAuthorizeUrl`/`CompleteAuthorizationAsync` for it.
 - Commit only files named by the current task.
 
 ## Stable App Services
@@ -149,7 +150,7 @@ dotnet test tests/LyricsX.Windows.App.Tests/LyricsX.Windows.App.Tests.csproj
 dotnet publish src/LyricsX.Windows.App/LyricsX.Windows.App.csproj -c Debug -r win-x64 --self-contained true
 ```
 
-Expected: tests pass and the unpackaged publish folder starts on a clean Windows 11 x64 machine without a separately installed .NET runtime.
+Expected: tests pass and the unpackaged publish folder starts on a clean Windows 11 machine (x64 or ARM64) without a separately installed .NET runtime.
 
 - [ ] Commit:
 
@@ -726,7 +727,7 @@ dotnet test LyricsX.Windows.slnx --filter "TestCategory!=LiveProvider"
 dotnet publish src/LyricsX.Windows.App/LyricsX.Windows.App.csproj -c Release -r win-x64 --self-contained true
 ```
 
-Expected: all automated tests pass and the published app completes the checklist on Windows 11 x64.
+Expected: all automated tests pass and the published app completes the checklist on Windows 11 (x64 or ARM64).
 
 - [ ] Commit:
 
@@ -737,7 +738,7 @@ git commit -m "feat(windows): complete application lifetime"
 
 ## Plan 03 Exit Criteria
 
-- [ ] The app runs unpackaged and self-contained on a clean Windows 11 x64 user account.
+- [ ] The app runs unpackaged and self-contained on a clean Windows 11 (x64 or ARM64) user account.
 - [ ] Taskbar lyrics update smoothly without stealing focus or appearing in Alt+Tab.
 - [ ] Left click opens the approved compact menu; right click and tray open the approved full menu.
 - [ ] Preferences use Mac-compatible wording and contain no experimental page.

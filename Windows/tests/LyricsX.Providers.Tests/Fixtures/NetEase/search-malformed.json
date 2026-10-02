@@ -1,0 +1,22 @@
+{
+  "result": {
+    "songs": [
+      {
+        "name": "Broken",
+        "id": "abc",
+        "duration": 269000,
+        "artists": [ { "name": "x", "id": 1 } ],
+        "album": { "name": "y", "id": 2, "picUrl": null }
+      },
+      {
+        "name": "晴天",
+        "id": 777,
+        "duration": 269000,
+        "artists": [ { "name": "测试歌手", "id": 11 } ],
+        "album": { "name": "测试专辑", "id": 55, "picUrl": null }
+      }
+    ],
+    "songCount": 2
+  },
+  "code": 200
+}
