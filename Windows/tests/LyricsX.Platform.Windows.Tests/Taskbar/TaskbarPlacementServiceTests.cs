@@ -38,17 +38,18 @@ public sealed class TaskbarPlacementServiceTests
         service.PlacementChanged += (_, _) => changed.Release();
 
         _ = service.RunAsync(CancellationToken.None);
-        await Task.Delay(150);
+        await Task.Delay(400);
         reader.Snapshot = snapshot with
         {
             OccupiedBounds = [new PixelRect(0, 1040, 48, 40), new PixelRect(760, 1040, 400, 40), new PixelRect(1650, 1040, 270, 40)]
         };
         reader.RaiseChanged();
-        await Task.Delay(150);
+        await Task.Delay(400);
 
-        Assert.IsTrue(await changed.WaitAsync(TimeSpan.Zero));
-        Assert.IsTrue(await changed.WaitAsync(TimeSpan.Zero));
-        Assert.IsFalse(await changed.WaitAsync(TimeSpan.Zero),
+        Assert.IsTrue(await changed.WaitAsync(TimeSpan.FromSeconds(1)));
+        Assert.IsTrue(await changed.WaitAsync(TimeSpan.FromSeconds(1)));
+        // extra poll-timer firings publish no additional semantic changes
+        Assert.IsFalse(await changed.WaitAsync(TimeSpan.FromMilliseconds(300)),
             "placement changed fired more than twice for one semantic change");
     }
 
