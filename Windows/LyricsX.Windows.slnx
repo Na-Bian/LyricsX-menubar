@@ -2,9 +2,11 @@
   <Project Path="src/LyricsX.Core/LyricsX.Core.csproj" />
   <Project Path="src/LyricsX.Providers/LyricsX.Providers.csproj" />
   <Project Path="src/LyricsX.Platform.Windows/LyricsX.Platform.Windows.csproj" />
+  <Project Path="src/LyricsX.Windows.App/LyricsX.Windows.App.csproj" />
   <Project Path="tests/LyricsX.Core.Tests/LyricsX.Core.Tests.csproj" />
   <Project Path="tests/LyricsX.Providers.Tests/LyricsX.Providers.Tests.csproj" />
   <Project Path="tests/LyricsX.Platform.Windows.Tests/LyricsX.Platform.Windows.Tests.csproj" />
+  <Project Path="tests/LyricsX.Windows.App.Tests/LyricsX.Windows.App.Tests.csproj" />
   <Project Path="tests/LyricsX.Windows.TestMediaApp/LyricsX.Windows.TestMediaApp.csproj" />
   <Project Path="tools/MediaSessionProbe/MediaSessionProbe.csproj" />
 </Solution>

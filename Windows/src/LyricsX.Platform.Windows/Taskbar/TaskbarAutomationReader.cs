@@ -1,12 +1,11 @@
-using System.Windows.Automation;
+using System.Runtime.InteropServices;
 
 namespace LyricsX.Platform.Windows.Taskbar;
 
 /// <summary>
-/// Reads occupied taskbar rectangles through UI Automation on a dedicated
-/// MTA worker thread (UIA calls are COM-backed and benefit from a stable
-/// apartment). Stale-element failures retry once; anything else yields an
-/// empty result so the caller applies fallback reservations.
+/// Reads occupied taskbar rectangles through UI Automation COM interop on a
+/// dedicated MTA worker thread. Stale-element failures retry once; anything
+/// else yields an empty result so the caller applies fallback reservations.
 /// </summary>
 public sealed class TaskbarAutomationReader : ITaskbarAutomationApi, IDisposable
 {
@@ -36,16 +35,39 @@ public sealed class TaskbarAutomationReader : ITaskbarAutomationApi, IDisposable
     {
         try
         {
-            var root = AutomationElement.FromHandle(taskbarWindow);
-            return Collect(root, taskbarWindow);
+            var automation = UIAutomationInterop.Create();
+            if (automation.ElementFromHandle(taskbarWindow, out var taskbar) != 0)
+            {
+                return [];
+            }
+
+            _ = automation.CreateTrueCondition(out var condition);
+            if (taskbar.FindAll(
+                    UIAutomationInterop.TreeScope_Descendants,
+                    condition,
+                    out var elements) != 0)
+            {
+                return [];
+            }
+
+            return Collect(elements, taskbarWindow);
         }
-        catch (ElementNotAvailableException)
+        catch (COMException)
         {
-            // one retry with a fresh root
+            // stale tree or access denied: one retry with a fresh instance
             try
             {
-                var root = AutomationElement.FromHandle(taskbarWindow);
-                return Collect(root, taskbarWindow);
+                var automation = UIAutomationInterop.Create();
+                if (automation.ElementFromHandle(taskbarWindow, out var taskbar) != 0 ||
+                    taskbar.FindAll(
+                        UIAutomationInterop.TreeScope_Descendants,
+                        null!,
+                        out var elements) != 0)
+                {
+                    return [];
+                }
+
+                return Collect(elements, taskbarWindow);
             }
             catch (Exception)
             {
@@ -54,34 +76,62 @@ public sealed class TaskbarAutomationReader : ITaskbarAutomationApi, IDisposable
         }
         catch (Exception)
         {
-            // access denied or unexpected Explorer tree: caller falls back
+            // unexpected Explorer tree: caller falls back
             return [];
         }
     }
 
-    private static IReadOnlyList<PixelRect> Collect(AutomationElement root, nint taskbarWindow)
+    private static IReadOnlyList<PixelRect> Collect(
+        UIAutomationInterop.IUIAutomationElementArray elements,
+        nint taskbarWindow)
     {
-        var taskbarRect = root.Current.BoundingRectangle;
-        var condition = new OrCondition(
-            new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Button),
-            new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.List),
-            new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.ToolBar),
-            new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Custom));
-        var elements = root.FindAll(TreeScope.Descendants, condition);
+        if (elements.get_Length(out var count) != 0)
+        {
+            return [];
+        }
+
+        if (!Interop.NativeMethods.GetWindowRect(
+                taskbarWindow, out var taskbarRect))
+        {
+            return [];
+        }
 
         var rects = new List<PixelRect>();
-        foreach (AutomationElement element in elements)
+        for (var i = 0; i < count; i++)
         {
+            if (elements.GetElement(i, out var element) != 0)
+            {
+                continue;
+            }
+
             try
             {
-                var raw = element.Current.BoundingRectangle;
-                if (raw.IsEmpty || raw.Width < MinRectSizePx || raw.Height < MinRectSizePx)
+                if (element.get_CurrentControlType(out var controlType) != 0)
                 {
                     continue;
                 }
 
-                var rect = new PixelRect(
-                    (int)raw.Left, (int)raw.Top, (int)raw.Width, (int)raw.Height);
+                if (controlType is not
+                    (UIAutomationInterop.ControlType_Button or
+                     UIAutomationInterop.ControlType_List or
+                     UIAutomationInterop.ControlType_MenuItem or
+                     UIAutomationInterop.ControlType_ToolBar or
+                     UIAutomationInterop.ControlType_Custom))
+                {
+                    continue;
+                }
+
+                if (element.get_CurrentBoundingRectangle(out var raw) != 0)
+                {
+                    continue;
+                }
+
+                var rect = new PixelRect(raw.Left, raw.Top, raw.Width, raw.Height);
+                if (rect.Width < MinRectSizePx || rect.Height < MinRectSizePx)
+                {
+                    continue;
+                }
+
                 if (rect.Right <= taskbarRect.Left || rect.X >= taskbarRect.Right ||
                     rect.Bottom <= taskbarRect.Top || rect.Y >= taskbarRect.Bottom)
                 {
@@ -90,7 +140,7 @@ public sealed class TaskbarAutomationReader : ITaskbarAutomationApi, IDisposable
 
                 rects.Add(rect);
             }
-            catch (ElementNotAvailableException)
+            catch (COMException)
             {
                 // stale mid-walk element: skip it
             }
@@ -119,12 +169,12 @@ public sealed class TaskbarAutomationReader : ITaskbarAutomationApi, IDisposable
         return merged;
     }
 
-    /// <summary>Single STA-free MTA worker thread serializing UIA calls.</summary>
+    /// <summary>Single MTA worker thread serializing UIA COM calls.</summary>
     private sealed class Worker : IDisposable
     {
         private readonly Thread thread;
         private readonly BlockingQueue<Action> queue = new();
-        private bool disposed;
+        private int disposed;
 
         public Worker()
         {
@@ -139,7 +189,7 @@ public sealed class TaskbarAutomationReader : ITaskbarAutomationApi, IDisposable
 
         public IReadOnlyList<PixelRect> Invoke(nint taskbarWindow)
         {
-            ObjectDisposedException.ThrowIf(disposed, this);
+            ObjectDisposedException.ThrowIf(disposed != 0, this);
             var completion = new TaskCompletionSource<IReadOnlyList<PixelRect>>(
                 TaskCreationOptions.RunContinuationsAsynchronously);
             queue.Enqueue(() =>
@@ -166,7 +216,7 @@ public sealed class TaskbarAutomationReader : ITaskbarAutomationApi, IDisposable
 
         public void Dispose()
         {
-            disposed = true;
+            Interlocked.Exchange(ref disposed, 1);
             queue.Complete();
         }
     }

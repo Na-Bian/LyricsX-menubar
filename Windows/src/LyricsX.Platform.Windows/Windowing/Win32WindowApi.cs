@@ -1,4 +1,4 @@
-using System.Windows;
+using Microsoft.UI.Xaml;
 using LyricsX.Platform.Windows.Interop;
 
 namespace LyricsX.Platform.Windows.Windowing;

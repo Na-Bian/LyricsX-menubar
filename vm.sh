@@ -7,6 +7,9 @@ VM=31576@192.168.213.128
 ROOT=/Users/nabian/Documents/LyricsX-windows
 
 do_sync() {
+  # wipe-and-copy: renamed/deleted local files must disappear on the VM, or
+  # stale duplicates poison the build (this bit us once with two XAML pages)
+  ssh -o BatchMode=yes $VM "if exist C:\\Users\\31576\\LyricsX\\Windows rmdir /s /q C:\\Users\\31576\\LyricsX\\Windows" >/dev/null
   ssh -o BatchMode=yes $VM "if not exist C:\\Users\\31576\\LyricsX mkdir C:\\Users\\31576\\LyricsX" >/dev/null
   COPYFILE_DISABLE=1 tar -czf - -C "$ROOT" --exclude '._*' Windows | ssh -o BatchMode=yes $VM "tar -xzf - -C C:/Users/31576/LyricsX"
 }

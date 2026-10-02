@@ -34,7 +34,11 @@ public sealed class SelectedMediaSession(
 
     public async ValueTask DisposeAsync()
     {
-        Interlocked.Exchange(ref disposed, 1);
+        if (Interlocked.Exchange(ref disposed, 1) != 0)
+        {
+            return; // DI may dispose via both the concrete and interface registrations
+        }
+
         source.SessionsChanged -= OnSessionsChanged;
         await refreshGate.WaitAsync();
         try

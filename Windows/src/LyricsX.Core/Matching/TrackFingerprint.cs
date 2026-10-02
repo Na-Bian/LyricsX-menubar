@@ -25,6 +25,17 @@ public static class TrackFingerprint
         return $"{artist}|{album}";
     }
 
+    /// <summary>Fingerprint over candidate metadata, used as the cache-file
+    /// key for manually associated lyrics.</summary>
+    public static string OfCandidate(LyricCandidate candidate) => Create(
+        new MediaTrack(
+            candidate.ProviderId,
+            candidate.ProviderId,
+            candidate.Title,
+            candidate.Artist,
+            candidate.Album,
+            candidate.Duration));
+
     internal static string PrimaryArtist(string artist)
     {
         var separators = new[] { " feat. ", " ft. ", " featuring ", " & ", "、", "," };
