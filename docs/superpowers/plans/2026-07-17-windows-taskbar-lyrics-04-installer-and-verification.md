@@ -11,12 +11,12 @@
 ## Global Constraints
 
 - Complete plans 01–03 first.
-- Produce x64 Windows 11 artifacts only.
+- Produce Windows 11 artifacts for both `win-x64` and `win-arm64`. All installer, checksum, signing, and verification steps apply to both RIDs unless stated otherwise.
 - Default distribution is unsigned and per-user; installation must not require administrator rights.
 - A private self-signed certificate is optional. Never commit or share a `.pfx`, password, private key, certificate-store export, or signing secret.
 - Do not claim publisher trust for an unsigned or self-signed build.
 - Installer/uninstaller must preserve user settings, cache, associations, logs, and credentials unless the user explicitly selects a data-removal action.
-- Release only after the five-player and shell matrix passes on the user's Windows 11 x64 PC/VM.
+- Release only after the five-player and shell matrix passes on the user's Windows 11 ARM64 VM (and on x64 where available).
 - Commit only files named by the current task.
 
 ## Release Artifact Contract
@@ -25,6 +25,8 @@
 Windows/artifacts/<version>/
 ├── LyricsX-Windows-Setup-x64.exe
 ├── LyricsX-Windows-Portable-x64.zip
+├── LyricsX-Windows-Setup-arm64.exe
+├── LyricsX-Windows-Portable-arm64.zip
 ├── SHA256SUMS.txt
 ├── LICENSE.txt
 ├── THIRD-PARTY-NOTICES.txt
@@ -41,10 +43,11 @@ The installer name is stable across signing modes. `SHA256SUMS.txt` is generated
 
 - Create: `Windows/Directory.Build.targets`
 - Create: `Windows/src/LyricsX.Windows.App/Properties/PublishProfiles/win-x64.pubxml`
+- Create: `Windows/src/LyricsX.Windows.App/Properties/PublishProfiles/win-arm64.pubxml`
 - Create: `Windows/tools/Publish-Release.ps1`
 - Create: `Windows/tests/Release.Tests.ps1`
 
-**Interfaces produced:** `Windows/out/publish/win-x64/`.
+**Interfaces produced:** `Windows/out/publish/win-x64/` and `Windows/out/publish/win-arm64/`.
 
 - [ ] Create `Directory.Build.targets`:
 
@@ -81,6 +84,24 @@ The installer name is stable across signing modes. `SHA256SUMS.txt` is generated
 </Project>
 ```
 
+- [ ] Create `win-arm64.pubxml` (identical except `RuntimeIdentifier` and `PublishDir` use `win-arm64`):
+
+```xml
+<Project>
+  <PropertyGroup>
+    <Configuration>Release</Configuration>
+    <RuntimeIdentifier>win-arm64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>false</PublishSingleFile>
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <PublishTrimmed>false</PublishTrimmed>
+    <DebugType>embedded</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <PublishDir>$(MSBuildThisFileDirectory)..\..\..\..\..\out\publish\win-arm64\</PublishDir>
+  </PropertyGroup>
+</Project>
+```
+
 - [ ] Create `Publish-Release.ps1`:
 
 ```powershell
@@ -95,10 +116,13 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $solution = Join-Path $root 'LyricsX.Windows.slnx'
 $project = Join-Path $root 'src\LyricsX.Windows.App\LyricsX.Windows.App.csproj'
-$publish = Join-Path $root 'out\publish\win-x64'
+$rids = @('win-x64', 'win-arm64')
 
-if (Test-Path $publish) {
-    Remove-Item $publish -Recurse -Force
+foreach ($rid in $rids) {
+    $publish = Join-Path $root ("out\publish\" + $rid)
+    if (Test-Path $publish) {
+        Remove-Item $publish -Recurse -Force
+    }
 }
 
 dotnet restore $solution --locked-mode
@@ -107,14 +131,16 @@ if ($LASTEXITCODE -ne 0) { throw 'dotnet restore failed.' }
 dotnet test $solution -c Release --no-restore --filter 'TestCategory!=LiveProvider'
 if ($LASTEXITCODE -ne 0) { throw 'dotnet test failed.' }
 
-dotnet publish $project -c Release -r win-x64 --self-contained true `
-    -p:Version=$Version -p:ContinuousIntegrationBuild=true `
-    -p:PublishProfile=win-x64
-if ($LASTEXITCODE -ne 0) { throw 'dotnet publish failed.' }
+foreach ($rid in $rids) {
+    dotnet publish $project -c Release -r $rid --self-contained true `
+        -p:Version=$Version -p:ContinuousIntegrationBuild=true `
+        -p:PublishProfile=$rid
+    if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed for $rid." }
 
-$exe = Join-Path $publish 'LyricsX.Windows.App.exe'
-if (-not (Test-Path $exe)) { throw "Published executable not found: $exe" }
-Write-Output $publish
+    $exe = Join-Path $root ("out\publish\" + $rid + '\LyricsX.Windows.App.exe')
+    if (-not (Test-Path $exe)) { throw "Published executable not found: $exe" }
+    Write-Output $exe
+}
 ```
 
 - [ ] Create `Release.Tests.ps1`:
@@ -122,22 +148,25 @@ Write-Output $publish
 ```powershell
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
-$publish = Join-Path $root 'out\publish\win-x64'
+$rids = @('win-x64', 'win-arm64')
 $required = @(
     'LyricsX.Windows.App.exe',
     'Microsoft.WindowsAppRuntime.Bootstrap.dll',
     'Microsoft.WindowsAppRuntime.dll'
 )
 
-foreach ($name in $required) {
-    $path = Join-Path $publish $name
-    if (-not (Test-Path $path)) { throw "Missing release file: $name" }
-}
+foreach ($rid in $rids) {
+    $publish = Join-Path $root ("out\publish\" + $rid)
+    foreach ($name in $required) {
+        $path = Join-Path $publish $name
+        if (-not (Test-Path $path)) { throw "Missing release file for ${rid}: $name" }
+    }
 
-$unexpected = Get-ChildItem $publish -Recurse -File |
-    Where-Object { $_.Extension -in '.pdb', '.pfx', '.snk' }
-if ($unexpected) {
-    throw "Forbidden release files: $($unexpected.FullName -join ', ')"
+    $unexpected = Get-ChildItem $publish -Recurse -File |
+        Where-Object { $_.Extension -in '.pdb', '.pfx', '.snk' }
+    if ($unexpected) {
+        throw "Forbidden release files: $($unexpected.FullName -join ', ')"
+    }
 }
 ```
 

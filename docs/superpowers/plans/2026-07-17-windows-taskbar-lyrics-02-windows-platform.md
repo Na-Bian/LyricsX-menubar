@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - Complete plan 01 first and consume its stable `LyricsX.Core` contracts.
-- Support Windows 11 x64 only; reject older OS versions with a clear startup message.
+- Support Windows 11 x64 and ARM64; reject older OS versions with a clear startup message.
 - Use public APIs and read-only taskbar inspection. Do not inject DLLs, subclass Explorer, patch the taskbar, or write Explorer-owned state.
 - Keep taskbar placement on the primary display in the first release.
 - Treat taskbar and media-session data as transient; never persist window handles or WinRT session objects.
@@ -148,7 +148,7 @@ dotnet build LyricsX.Windows.slnx
 dotnet test tests/LyricsX.Platform.Windows.Tests/LyricsX.Platform.Windows.Tests.csproj
 ```
 
-Expected: build and boundary test pass on Windows 11 x64.
+Expected: build and boundary test pass on Windows 11 x64 and ARM64.
 
 - [ ] Commit:
 
@@ -695,4 +695,4 @@ git commit -m "test(windows): add deterministic media session app"
 - [ ] The overlay never overlaps a discovered occupied rectangle and hides below 80 available DIPs.
 - [ ] Auto-hide, foreground full-screen, DPI/display changes, and Explorer restart are handled without stealing focus.
 - [ ] Tray, shortcut, startup, and Spotify credential services operate per-user without elevation.
-- [ ] `dotnet test Windows/LyricsX.Windows.slnx --filter "TestCategory!=LiveProvider"` passes on Windows 11 x64.
+- [ ] `dotnet test Windows/LyricsX.Windows.slnx --filter "TestCategory!=LiveProvider"` passes on Windows 11 x64 and ARM64.

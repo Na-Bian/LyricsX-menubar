@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - Work only under `Windows/`; do not modify the existing macOS targets.
-- Target `net10.0-windows10.0.22000.0` and `win-x64`.
+- Target `net10.0-windows10.0.22000.0`; keep libraries and tests RID-neutral (AnyCPU) and select `win-x64` or `win-arm64` only at app publish time.
 - Keep domain code free of WinUI, HWND, registry, UI Automation, and GSMTC types.
 - Use cancellation tokens on all I/O and long-running searches.
 - Never log OAuth tokens, cookies, authorization headers, or complete provider responses.
@@ -128,8 +128,6 @@ dotnet add tests/LyricsX.Providers.Tests/LyricsX.Providers.Tests.csproj referenc
 <Project>
   <PropertyGroup>
     <TargetFramework>net10.0-windows10.0.22000.0</TargetFramework>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <PlatformTarget>x64</PlatformTarget>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>14.0</LangVersion>
