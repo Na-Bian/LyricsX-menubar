@@ -1,0 +1,24 @@
+[
+  {
+    "id": "not-a-number",
+    "name": "Broken",
+    "trackName": "Broken Row",
+    "artistName": "Test Artist",
+    "albumName": null,
+    "duration": "abc",
+    "instrumental": false,
+    "plainLyrics": null,
+    "syncedLyrics": "[00:01.00]broken"
+  },
+  {
+    "id": 42,
+    "name": "Valid Song",
+    "trackName": "Valid Song",
+    "artistName": "Test Artist",
+    "albumName": "Valid Album",
+    "duration": 200.0,
+    "instrumental": false,
+    "plainLyrics": null,
+    "syncedLyrics": "[00:01.00]valid line"
+  }
+]

@@ -2,6 +2,11 @@ using System.Text;
 
 namespace LyricsX.Providers;
 
+public sealed record ProviderHttpResponse(
+    int StatusCode,
+    System.Net.Http.Headers.HttpResponseHeaders Headers,
+    string Body);
+
 public sealed class ProviderHttpClient : IDisposable
 {
     public static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(15);
@@ -46,6 +51,24 @@ public sealed class ProviderHttpClient : IDisposable
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
+        var response = await SendCoreAsync(request, cancellationToken);
+        EnsureSuccess(response, providerName);
+        return response.Body;
+    }
+
+    public async Task<ProviderHttpResponse> SendWithHeadersAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
+        var response = await SendCoreAsync(request, cancellationToken);
+        EnsureSuccess(response, providerName);
+        return response;
+    }
+
+    private async Task<ProviderHttpResponse> SendCoreAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken)
+    {
         await throttle.WaitAsync(cancellationToken);
         try
         {
@@ -53,19 +76,26 @@ public sealed class ProviderHttpClient : IDisposable
                 request,
                 HttpCompletionOption.ResponseHeadersRead,
                 cancellationToken);
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new HttpRequestException(
-                    $"{providerName} returned {(int)response.StatusCode} {response.StatusCode}.");
-            }
-
             await using var stream = await response.Content
                 .ReadAsStreamAsync(cancellationToken);
-            return await ReadBoundedAsync(stream, cancellationToken);
+            var body = await ReadBoundedAsync(stream, cancellationToken);
+            return new ProviderHttpResponse(
+                (int)response.StatusCode,
+                response.Headers,
+                body);
         }
         finally
         {
             throttle.Release();
+        }
+    }
+
+    private static void EnsureSuccess(ProviderHttpResponse response, string providerName)
+    {
+        if (response.StatusCode < 200 || response.StatusCode >= 300)
+        {
+            throw new HttpRequestException(
+                $"{providerName} returned {response.StatusCode}.");
         }
     }
 

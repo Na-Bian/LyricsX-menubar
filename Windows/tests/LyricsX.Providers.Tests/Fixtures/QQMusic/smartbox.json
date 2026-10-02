@@ -1,0 +1,10 @@
+{
+  "code": 0,
+  "data": {
+    "song": {
+      "itemlist": [
+        { "mid": "midA", "name": "晴天歌", "singer": "测试歌手", "id": "101" }
+      ]
+    }
+  }
+}

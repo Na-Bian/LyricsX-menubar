@@ -118,6 +118,27 @@ public sealed class ProviderHttpClientTests
                 new HttpRequestMessage(HttpMethod.Get, TestUri), CancellationToken.None));
     }
 
+    [TestMethod]
+    public async Task SendWithHeadersAsync_ExposesResponseHeaders()
+    {
+        var stub = new StubHttpMessageHandler(_ =>
+        {
+            var response = JsonResponse("{}");
+            response.Headers.Add("Set-Cookie", "NMTID=abc123; Path=/; Max-Age=31536000");
+            return response;
+        });
+        using var client = Create(stub);
+
+        var response = await client.SendWithHeadersAsync(
+            new HttpRequestMessage(HttpMethod.Get, TestUri), CancellationToken.None);
+
+        Assert.AreEqual(200, response.StatusCode);
+        StringAssert.Contains(
+            string.Join("; ", response.Headers.GetValues("Set-Cookie")),
+            "NMTID=abc123");
+        Assert.AreEqual("{}", response.Body);
+    }
+
     private static ProviderHttpClient Create(StubHttpMessageHandler stub) =>
         new("test", stub, version: "1.2.3");
 

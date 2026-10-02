@@ -1,0 +1,13 @@
+[
+  {
+    "id": 12345,
+    "name": "Sunny Day Song",
+    "trackName": "Sunny Day Song",
+    "artistName": "Test Artist",
+    "albumName": "Test Album",
+    "duration": 201.5,
+    "instrumental": false,
+    "plainLyrics": null,
+    "syncedLyrics": "[00:01.00]hello window\n[00:03.50]second line"
+  }
+]

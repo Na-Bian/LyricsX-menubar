@@ -1,0 +1,5 @@
+<!--<?xml version="1.0" encoding="utf-8"?>
+<QQMusicLyric><lyric><content>
+[ti:晴天歌]
+[1000,2000]晴天(1200,300)好(1500,500)
+</content><contentts></contentts></lyric></QQMusicLyric>-->
