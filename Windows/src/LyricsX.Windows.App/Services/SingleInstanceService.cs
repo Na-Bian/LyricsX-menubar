@@ -40,26 +40,42 @@ public sealed class SingleInstanceService : IDisposable
 
     public bool SendCommand(string command)
     {
-        try
+        // the primary's server loop may not have opened its first pipe yet
+        for (var attempt = 0; attempt < 10; attempt++)
         {
-            using var client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut);
-            client.Connect(3000);
-            using var writer = new StreamWriter(client) { AutoFlush = true };
-            using var reader = new StreamReader(client);
-            writer.WriteLine(command);
-            return reader.ReadLine() == "ok";
+            try
+            {
+                using var client = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut);
+                client.Connect(500);
+                using var writer = new StreamWriter(client) { AutoFlush = true };
+                using var reader = new StreamReader(client);
+                writer.WriteLine(command);
+                return reader.ReadLine() == "ok";
+            }
+            catch (TimeoutException)
+            {
+            }
+            catch (IOException)
+            {
+            }
+            catch (ObjectDisposedException)
+            {
+                // server-side accept/handshake race: retry the connection
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+                LastServerError = exception.Message;
+            }
+
+            Thread.Sleep(100);
         }
-        catch (TimeoutException)
-        {
-            return false;
-        }
-        catch (IOException)
-        {
-            return false;
-        }
+
+        return false;
     }
 
     public static bool RequestShutdown() => new SingleInstanceService().SendCommand("shutdown");
+
+    public string? LastServerError { get; private set; }
 
     private async Task PipeServerLoop(CancellationToken cancellationToken)
     {
@@ -72,8 +88,9 @@ public sealed class SingleInstanceService : IDisposable
                     PipeName, PipeDirection.InOut, 1,
                     PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
             }
-            catch (IOException)
+            catch (Exception exception)
             {
+                LastServerError = exception.GetType().Name + ": " + exception.Message;
                 await Task.Delay(200, cancellationToken);
                 continue;
             }
