@@ -133,8 +133,15 @@ public sealed class LyricsApplicationCoordinatorTests
             var candidate = StrongCandidate("chosen line");
             await harness.Coordinator.UseCandidateAsync(candidate, remember: true, CancellationToken.None);
 
-            var fingerprint = TrackFingerprint.Create(track);
-            Assert.IsNotNull(await harness.Cache.TryGetAsync(fingerprint, CancellationToken.None));
+            // association maps the track fingerprint to the candidate's own
+            // cache entry, which the coordinator resolves on the next play
+            var trackFingerprint = TrackFingerprint.Create(track);
+            var candidateFingerprint = TrackFingerprint.OfCandidate(candidate);
+            var resolved = await harness.Store.TryResolveAsync(
+                trackFingerprint, CancellationToken.None);
+            Assert.AreEqual(candidateFingerprint, resolved);
+            Assert.IsNotNull(await harness.Cache.TryGetAsync(
+                candidateFingerprint, CancellationToken.None));
         }
         finally
         {
@@ -183,9 +190,12 @@ public sealed class LyricsApplicationCoordinatorTests
 
         public LyricsApplicationCoordinator Coordinator { get; }
 
+        public ManualAssociationStore Store { get; }
+
         public Harness(string root)
         {
             Cache = new LyricCache(root);
+            Store = new ManualAssociationStore(root);
             var store = new SettingsStore(root);
             Settings = new AppSettingsAccessor(
                 store, store.LoadAsync(CancellationToken.None).GetAwaiter().GetResult());
@@ -193,7 +203,7 @@ public sealed class LyricsApplicationCoordinatorTests
                 Session,
                 SearchCoordinator,
                 Cache,
-                new ManualAssociationStore(root),
+                Store,
                 Settings,
                 new LyricSynchronizer(),
                 new LyricTransformer(),

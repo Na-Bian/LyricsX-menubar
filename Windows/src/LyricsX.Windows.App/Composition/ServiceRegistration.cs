@@ -82,19 +82,27 @@ public static class ServiceRegistration
         ProviderHttpClient Client(string name) =>
             new(name, handler, version: version);
 
-        return
-        [
-            new QQMusicProvider(Client("qq")),
-            new NetEaseProvider(Client("netease")),
-            new KugouProvider(Client("kugou")),
-            new MusixmatchProvider(
+        // only enabled providers are registered, in the user's priority order:
+        // the search coordinator pumps whatever it is given
+        var byId = new Dictionary<string, Func<ILyricsProvider>>
+        {
+            ["qq"] = () => new QQMusicProvider(Client("qq")),
+            ["netease"] = () => new NetEaseProvider(Client("netease")),
+            ["kugou"] = () => new KugouProvider(Client("kugou")),
+            ["musixmatch"] = () => new MusixmatchProvider(
                 Client("musixmatch"), settings.Current.MusixmatchToken),
-            new LrclibProvider(Client("lrclib")),
-            new SpotifyLyricsProvider(
+            ["lrclib"] = () => new LrclibProvider(Client("lrclib")),
+            ["spotify"] = () => new SpotifyLyricsProvider(
                 Client("spotify"),
                 new WindowsCredentialStore(),
                 settings.Current.SpotifyClientId,
-                enabled: settings.Current.ProviderEnabled("spotify")),
-        ];
+                enabled: true),
+        };
+
+        return settings.Current.Providers
+            .Where(provider => provider.Enabled && byId.ContainsKey(provider.Id))
+            .OrderBy(provider => provider.Priority)
+            .Select(provider => byId[provider.Id]())
+            .ToArray();
     }
 }

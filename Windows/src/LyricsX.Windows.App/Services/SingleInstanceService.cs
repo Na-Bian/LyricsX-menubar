@@ -114,9 +114,11 @@ public sealed class SingleInstanceService : IDisposable
             {
                 return;
             }
-            catch (IOException)
+            catch (Exception exception)
             {
-                // client aborted mid-handshake: serve the next one
+                // a faulting subscriber or client must not kill the loop:
+                // log-and-continue keeps second-instance handling alive
+                LastServerError = exception.GetType().Name + ": " + exception.Message;
             }
         }
     }

@@ -39,6 +39,8 @@ public sealed class LyricsApplicationCoordinator(
     private PlaybackSnapshot playback = LyricsPresentationState.Empty.Playback;
     private IDispatcherTimer? tickTimer;
     private LyricsPresentationState current = LyricsPresentationState.Empty;
+    private PlaybackSnapshot lastSnapshot = LyricsPresentationState.Empty.Playback;
+    private DateTimeOffset lastSnapshotRealTime = DateTimeOffset.UtcNow;
 
     public event EventHandler<LyricsPresentationState>? StateChanged;
 
@@ -77,13 +79,28 @@ public sealed class LyricsApplicationCoordinator(
             return;
         }
 
-        await cache.StoreAsync(fingerprint, candidate, "manual", 100, cancellationToken);
+        // a manual pick supersedes any in-flight automatic search
+        CancelPipeline();
+
         if (remember)
         {
-            await associations.SetAsync(fingerprint, cacheKeyOf(candidate), cancellationToken);
+            // cache under the candidate's own fingerprint; the association
+            // maps the playing track to that cache entry
+            var candidateFingerprint = TrackFingerprint.OfCandidate(candidate);
+            await cache.StoreAsync(candidateFingerprint, candidate, "manual", 100, cancellationToken);
+            await associations.SetAsync(fingerprint, candidateFingerprint, cancellationToken);
         }
 
         ApplyDocument(candidate.Document, candidate.ProviderId);
+    }
+
+    public async Task ResetOffsetAsync()
+    {
+        await settings.ReplaceAsync(settings.Current with
+        {
+            UserOffsetMilliseconds = 0
+        });
+        RepublishFrame();
     }
 
     public async Task AdjustOffsetAsync(TimeSpan delta, CancellationToken cancellationToken)
@@ -122,6 +139,8 @@ public sealed class LyricsApplicationCoordinator(
         lock (gate)
         {
             playback = snapshot;
+            lastSnapshot = snapshot;
+            lastSnapshotRealTime = DateTimeOffset.UtcNow;
         }
 
         var track = snapshot.Track;
@@ -156,7 +175,8 @@ public sealed class LyricsApplicationCoordinator(
         var pipeline = new CancellationTokenSource();
         trackPipeline = pipeline;
 #pragma warning disable CS4014
-        currentFingerprint = TrackFingerprint.Create(track);
+        var pipelineFingerprint = TrackFingerprint.Create(track);
+        currentFingerprint = pipelineFingerprint;
         document = null;
         Publish(BuildState("正在搜索歌词…", isSearching: true));
 
@@ -220,10 +240,10 @@ public sealed class LyricsApplicationCoordinator(
 
                 if (state.IsFinal)
                 {
-                    if (best is not null)
+                    if (best is not null && pipelineFingerprint == currentFingerprint)
                     {
                         await cache.StoreAsync(
-                            currentFingerprint!, best, track.Title, bestScore, token);
+                            pipelineFingerprint, best, track.Title, bestScore, token);
                     }
                     else
                     {
@@ -288,9 +308,22 @@ public sealed class LyricsApplicationCoordinator(
         throw new InvalidOperationException(
             "a dispatcher timer factory is required in production composition");
 
+    private PlaybackSnapshot ExtrapolatedSnapshot()
+    {
+        var snapshot = lastSnapshot;
+        if (snapshot.Status == PlaybackStatus.Playing && snapshot.Track is not null)
+        {
+            // advance the position between GSMTC timeline updates while playing
+            var elapsed = DateTimeOffset.UtcNow - lastSnapshotRealTime;
+            return snapshot with { Position = snapshot.Position + elapsed * snapshot.Rate };
+        }
+
+        return snapshot;
+    }
+
     private void RepublishFrame()
     {
-        var snapshot = playback;
+        var snapshot = ExtrapolatedSnapshot();
         if (snapshot.Track is null)
         {
             return;
@@ -298,6 +331,10 @@ public sealed class LyricsApplicationCoordinator(
 
         if (!LyricsVisible)
         {
+            lock (gate)
+            {
+                document = null;
+            }
             Publish(BuildState("歌词已隐藏"));
             return;
         }
@@ -321,7 +358,7 @@ public sealed class LyricsApplicationCoordinator(
         LyricDocument? doc;
         lock (gate)
         {
-            snapshot = playback;
+            snapshot = ExtrapolatedSnapshot();
             doc = document;
         }
 

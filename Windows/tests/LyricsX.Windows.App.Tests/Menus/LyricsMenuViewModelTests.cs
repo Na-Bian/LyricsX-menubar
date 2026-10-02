@@ -76,6 +76,12 @@ public sealed class LyricsMenuViewModelTests
             return Task.CompletedTask;
         }
 
+        public Task ResetOffsetAsync()
+        {
+            OffsetCalls.Add(TimeSpan.Zero);
+            return Task.CompletedTask;
+        }
+
         public bool LyricsVisible { get; private set; } = true;
 
         public Task ToggleLyricsVisibilityAsync()

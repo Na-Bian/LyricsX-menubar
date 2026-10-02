@@ -135,6 +135,8 @@ public sealed class ManualSearchViewModelTests
         public Task AdjustOffsetAsync(TimeSpan delta, CancellationToken cancellationToken) =>
             Task.CompletedTask;
 
+        public Task ResetOffsetAsync() => Task.CompletedTask;
+
         public bool LyricsVisible { get; set; } = true;
 
         public Task ToggleLyricsVisibilityAsync()

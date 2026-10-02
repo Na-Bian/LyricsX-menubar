@@ -31,11 +31,8 @@ public partial class TaskbarLyricsViewModel : ObservableObject
         Progress = state.Frame.Progress;
         NextText = state.Frame.Next?.Content;
         IsSearching = state.IsSearching;
-        // visible whenever there is something meaningful to show: an active
-        // line, an in-flight search, or a status other than the idle text
-        IsVisible = state.Frame.Current is not null ||
-            state.IsSearching ||
-            (!string.IsNullOrEmpty(state.StatusText) &&
-             state.StatusText is not "无正在播放的媒体");
+        // visible only while there is a current line or a search in flight;
+        // "hidden"/"paused" statuses leave the overlay empty
+        IsVisible = state.Frame.Current is not null || state.IsSearching;
     }
 }

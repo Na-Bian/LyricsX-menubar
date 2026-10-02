@@ -46,8 +46,7 @@ public partial class LyricsMenuViewModel : ObservableObject
         await coordinator.AdjustOffsetAsync(TimeSpan.FromMilliseconds(500), CancellationToken.None);
 
     [RelayCommand]
-    private async Task ResetOffsetAsync() =>
-        await coordinator.AdjustOffsetAsync(TimeSpan.Zero, CancellationToken.None);
+    private Task ResetOffsetAsync() => coordinator.ResetOffsetAsync();
 
     [RelayCommand]
     private Task ManualSearchAsync() =>

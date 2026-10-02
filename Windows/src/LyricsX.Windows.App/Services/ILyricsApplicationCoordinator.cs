@@ -18,6 +18,8 @@ public interface ILyricsApplicationCoordinator : IAsyncDisposable
 
     Task AdjustOffsetAsync(TimeSpan delta, CancellationToken cancellationToken);
 
+    Task ResetOffsetAsync();
+
     Task ToggleLyricsVisibilityAsync();
 
     bool LyricsVisible { get; }

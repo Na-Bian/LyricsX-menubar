@@ -109,9 +109,13 @@ public partial class ManualSearchViewModel : ObservableObject
 
     public async Task AlwaysUseAsync(LyricCandidate candidate)
     {
-        var fingerprint = FingerprintOf(candidate);
-        await cache.StoreAsync(fingerprint, candidate, "manual", 100, CancellationToken.None);
-        await associations.SetAsync(fingerprint, CacheKeyOf(candidate), CancellationToken.None);
+        // association key = the CURRENT track's fingerprint, value = the
+        // candidate's own fingerprint (the cache file key) — same scheme the
+        // coordinator resolves on the next play of the same track
+        var trackFingerprint = CurrentTrackFingerprint ?? TrackFingerprint.OfCandidate(candidate);
+        var candidateFingerprint = TrackFingerprint.OfCandidate(candidate);
+        await cache.StoreAsync(candidateFingerprint, candidate, "manual", 100, CancellationToken.None);
+        await associations.SetAsync(trackFingerprint, candidateFingerprint, CancellationToken.None);
         if (coordinator is not null)
         {
             await coordinator.UseCandidateAsync(candidate, remember: true, CancellationToken.None);
@@ -120,13 +124,11 @@ public partial class ManualSearchViewModel : ObservableObject
 
     public async Task RemoveAssociationAsync(LyricCandidate candidate)
     {
-        var fingerprint = FingerprintOf(candidate);
-        await associations.RemoveAsync(fingerprint, CancellationToken.None);
+        var trackFingerprint = CurrentTrackFingerprint ?? TrackFingerprint.OfCandidate(candidate);
+        await associations.RemoveAsync(trackFingerprint, CancellationToken.None);
     }
 
-    private static string FingerprintOf(LyricCandidate candidate) =>
-        $"{candidate.Title.ToLowerInvariant().Trim()}|{candidate.Artist.ToLowerInvariant().Trim()}|{(int)(candidate.Duration?.TotalSeconds ?? 0)}";
-
-    private static string CacheKeyOf(LyricCandidate candidate) =>
-        $"{candidate.ProviderId}:{candidate.Title}:{candidate.Document.Lines.Count}";
+    /// <summary>Fingerprint of the currently playing track, supplied by the
+    /// caller so "for this song" always keys on the playing track.</summary>
+    public string? CurrentTrackFingerprint { get; set; }
 }

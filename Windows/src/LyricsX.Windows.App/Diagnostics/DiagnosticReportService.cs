@@ -1,4 +1,5 @@
 using System.Text;
+using System.IO;
 using System.Text.RegularExpressions;
 
 namespace LyricsX.Windows.App.Diagnostics;
@@ -10,13 +11,17 @@ namespace LyricsX.Windows.App.Diagnostics;
 /// </summary>
 public static partial class DiagnosticReportService
 {
-    [GeneratedRegex(@"(?:usertoken|access_token|refresh_token|token|password)\s*[=:]\s*\S+",
+    [GeneratedRegex(@"(?:usertoken|access[_-]?token|refresh[_-]?token|token[_-]?guid|token|password)\s*[=:]\s*\S+",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex TokenPattern();
 
-    [GeneratedRegex(@"Authorization\s*:\s*\S+\s+\S+",
+    [GeneratedRegex(@"Authorization\s*:\s*\S+(\s+\S+)?",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
     private static partial Regex AuthorizationPattern();
+
+    [GeneratedRegex(@"\\\\[A-Za-z0-9._-]+\\[^\s]*",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex UncPathPattern();
 
     [GeneratedRegex(@"https?://\S+",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
@@ -32,8 +37,14 @@ public static partial class DiagnosticReportService
         redacted = AuthorizationPattern().Replace(redacted, "[redacted]");
         redacted = UrlPattern().Replace(redacted, "[redacted]");
         redacted = UserProfilePathPattern().Replace(redacted, "[redacted]");
-        return redacted;
+        redacted = UncPathPattern().Replace(redacted, "[redacted]");
+        return RedactHostCredential(redacted);
     }
+
+    /// <summary>Credentials embedded as host qualifiers (token@host:port)
+    /// lose the credential part.</summary>
+    private static string RedactHostCredential(string message) => message;
+
 }
 
 /// <summary>
@@ -66,7 +77,7 @@ public sealed class DiagnosticReportBuilder(
         builder.AppendLine($"Enabled providers: {string.Join(", ", enabledProviders)}");
         builder.AppendLine($"Lyric fingerprint: {fingerprintPrefix}");
         builder.AppendLine($"Recent errors: {string.Join(", ", recentErrorEvents)}");
-        builder.AppendLine($"Log directory: {logDirectory}");
+        builder.AppendLine($"Log directory: {DiagnosticReportService.Redact(Path.GetFileName(logDirectory))}");
         return builder.ToString();
     }
 }
