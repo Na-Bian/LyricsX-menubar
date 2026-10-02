@@ -165,7 +165,7 @@ public sealed class KugouProvider(ProviderHttpClient httpClient) : ILyricsProvid
     internal sealed record KugouInfo(
         string? Hash,
         string? AlbumId,
-        long? AlbumAudioId,
+        [property: System.Text.Json.Serialization.JsonPropertyName("album_audio_id")] long? AlbumAudioId,
         KugouCandidate? Candidate = null,
         LyricDocument? Document = null);
 

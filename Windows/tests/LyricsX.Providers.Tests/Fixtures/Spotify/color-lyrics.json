@@ -1,0 +1,9 @@
+{
+  "lyrics": {
+    "syncType": "LINE_SYNCED",
+    "lines": [
+      { "startTimeMs": 1000, "words": "hello window", "syllables": [] },
+      { "startTimeMs": 3500, "words": "second line", "syllables": [] }
+    ]
+  }
+}

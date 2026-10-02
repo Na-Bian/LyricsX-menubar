@@ -65,6 +65,15 @@ public sealed class ProviderHttpClient : IDisposable
         return response;
     }
 
+    /// <summary>
+    /// Sends without enforcing success so callers can branch on the status
+    /// code (for example Spotify's 401-refresh-retry flow).
+    /// </summary>
+    public Task<ProviderHttpResponse> TrySendAsync(
+        HttpRequestMessage request,
+        CancellationToken cancellationToken) =>
+        SendCoreAsync(request, cancellationToken);
+
     private async Task<ProviderHttpResponse> SendCoreAsync(
         HttpRequestMessage request,
         CancellationToken cancellationToken)
