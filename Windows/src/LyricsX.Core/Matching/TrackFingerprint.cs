@@ -25,7 +25,7 @@ public static class TrackFingerprint
         return $"{artist}|{album}";
     }
 
-    private static string PrimaryArtist(string artist)
+    internal static string PrimaryArtist(string artist)
     {
         var separators = new[] { " feat. ", " ft. ", " featuring ", " & ", "、", "," };
         var index = separators
