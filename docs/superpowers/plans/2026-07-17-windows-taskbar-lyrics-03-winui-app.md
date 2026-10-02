@@ -18,6 +18,10 @@
 - Every command must be reachable by keyboard and expose a meaningful AutomationProperties name.
 - The taskbar lyric window must not activate; preferences and manual search are normal activatable windows.
 - The Spotify connection flow must implement the loopback listener (`http://127.0.0.1:<ephemeral-port>/callback/`) and browser launch here; `LyricsX.Providers` exposes `BuildAuthorizeUrl`/`CompleteAuthorizationAsync` for it.
+- The taskbar lyrics window creation must apply the AppWindow/OverlappedPresenter setup from plan 02 Task 6 (`SetBorderAndTitleBar(false,false)`, `IsAlwaysOnTop`, non-resizable) after `WindowNative.GetWindowHandle`, then call `WindowStyleService.ApplyNonActivatingStyle`; `WM_MOUSEACTIVATE` must return `MA_NOACTIVATE` via the window's subclass proc.
+- The app's hidden message window must call `TaskbarSnapshotReader.NotifyChange()` on `WM_DISPLAYCHANGE`, `WM_DPICHANGED`, `WM_SETTINGCHANGE`, `TaskbarCreated`, and Explorer process changes (in addition to `TaskbarPlacementService.RunAsync`'s 500 ms poll).
+- `GlobalHotKeyService` must be constructed on a thread with a message pump (the WinUI dispatcher thread); `Win32HotKeyNativeApi` delivers `WM_HOTKEY` through that pump only.
+- `MediaSessionSnapshot.NativeSession` carries the live `GlobalSystemMediaTransportControlsSession` for transport controls and per-session timeline refreshes.
 - Commit only files named by the current task.
 
 ## Stable App Services

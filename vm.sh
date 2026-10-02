@@ -22,6 +22,14 @@ case "${1:-}" in
     shift
     do_sync
     ssh -o BatchMode=yes $VM "cd /d C:\\Users\\31576\\LyricsX\\Windows && dotnet test $* 2>&1" ;;
+  testplat)
+    # platform-suite filter via .rsp file (avoids cmd-over-ssh quoting)
+    do_sync
+    ssh -o BatchMode=yes $VM "powershell -NoProfile -Command \"Set-Location C:\Users\31576\LyricsX\Windows; dotnet test tests/LyricsX.Platform.Windows.Tests/LyricsX.Platform.Windows.Tests.csproj @C:\Users\31576\testfilter.rsp 2>&1\"" ;;
+  regress)
+    # full offline regression across the solution
+    do_sync
+    ssh -o BatchMode=yes $VM "powershell -NoProfile -Command \"Set-Location C:\Users\31576\LyricsX\Windows; dotnet test LyricsX.Windows.slnx @C:\Users\31576\testfilter.rsp 2>&1\"" ;;
   *)
     echo "usage: vm.sh sync|build|test <args>" >&2
     exit 2 ;;
