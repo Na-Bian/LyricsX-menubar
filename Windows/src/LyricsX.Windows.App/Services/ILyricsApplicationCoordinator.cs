@@ -17,6 +17,10 @@ public interface ILyricsApplicationCoordinator : IAsyncDisposable
     Task UseCandidateAsync(LyricCandidate candidate, bool remember, CancellationToken cancellationToken);
 
     Task AdjustOffsetAsync(TimeSpan delta, CancellationToken cancellationToken);
+
+    Task ToggleLyricsVisibilityAsync();
+
+    bool LyricsVisible { get; }
 }
 
 public sealed record LyricsPresentationState(

@@ -100,6 +100,15 @@ public sealed class LyricsApplicationCoordinator(
         RepublishFrame();
     }
 
+    public bool LyricsVisible { get; private set; } = true;
+
+    public Task ToggleLyricsVisibilityAsync()
+    {
+        LyricsVisible = !LyricsVisible;
+        RepublishFrame();
+        return Task.CompletedTask;
+    }
+
     public ValueTask DisposeAsync()
     {
         session.PlaybackChanged -= OnPlaybackChanged;
@@ -287,9 +296,15 @@ public sealed class LyricsApplicationCoordinator(
             return;
         }
 
+        if (!LyricsVisible)
+        {
+            Publish(BuildState("歌词已隐藏"));
+            return;
+        }
+
         if (snapshot.Status != PlaybackStatus.Playing && !settings.Current.ShowWhenPaused)
         {
-            Publish(BuildState(lyricsVisible: false));
+            Publish(BuildState("已暂停"));
             return;
         }
 
