@@ -13,8 +13,25 @@ public sealed record AppSettings(
     ChineseConversion ChineseConversion,
     IReadOnlyList<ProviderSetting> Providers,
     IReadOnlyList<string> IgnoredTrackFingerprints,
-    IReadOnlyList<string> IgnoredAlbumFingerprints)
+    IReadOnlyList<string> IgnoredAlbumFingerprints,
+    string MusixmatchToken = "",
+    string SpotifyClientId = "",
+    bool AutoMatchLyrics = true,
+    bool HideWhenNoMedia = true,
+    bool ShowNextLine = true,
+    bool AutoScrollLongLines = true,
+    bool FollowSystemAnimation = true,
+    string FontName = "Segoe UI Variable Text",
+    double FontSize = 13,
+    string FontWeight = "SemiBold",
+    bool StrictSearch = false,
+    IReadOnlyList<string> BlockedPhrases = null!)
 {
+    public AppSettings()
+        : this(1, false, true, 260, 0, ChineseConversion.None, [], [], [])
+    {
+    }
+
     // IReadOnlyList fields get reference equality from the generated record
     // members; JSON round-trips produce different list instances, so compare
     // the sequences structurally instead.
@@ -28,11 +45,23 @@ public sealed record AppSettings(
         ChineseConversion == other.ChineseConversion &&
         Providers.SequenceEqual(other.Providers) &&
         IgnoredTrackFingerprints.SequenceEqual(other.IgnoredTrackFingerprints) &&
-        IgnoredAlbumFingerprints.SequenceEqual(other.IgnoredAlbumFingerprints);
+        IgnoredAlbumFingerprints.SequenceEqual(other.IgnoredAlbumFingerprints) &&
+        MusixmatchToken == other.MusixmatchToken &&
+        SpotifyClientId == other.SpotifyClientId &&
+        AutoMatchLyrics == other.AutoMatchLyrics &&
+        HideWhenNoMedia == other.HideWhenNoMedia &&
+        ShowNextLine == other.ShowNextLine &&
+        AutoScrollLongLines == other.AutoScrollLongLines &&
+        FollowSystemAnimation == other.FollowSystemAnimation &&
+        FontName == other.FontName &&
+        FontSize == other.FontSize &&
+        FontWeight == other.FontWeight &&
+        StrictSearch == other.StrictSearch &&
+        (BlockedPhrases ?? []).SequenceEqual(other.BlockedPhrases ?? []);
 
     public override int GetHashCode() => HashCode.Combine(
         SchemaVersion, LaunchAtLogin, ShowWhenPaused, WidthDip,
-        UserOffsetMilliseconds, ChineseConversion);
+        UserOffsetMilliseconds, ChineseConversion, MusixmatchToken, SpotifyClientId);
 
     public static AppSettings Default { get; } = new(
         SchemaVersion: 1,
