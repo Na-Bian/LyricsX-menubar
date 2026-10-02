@@ -140,7 +140,8 @@ public sealed class MusixmatchProvider(
                 return null;
             }
 
-            var macroCalls = body.TryGetProperty("macro_calls", out var calls)
+            var macroCalls = body.ValueKind == JsonValueKind.Object &&
+                body.TryGetProperty("macro_calls", out var calls)
                 ? calls
                 : default(JsonElement?);
             if (macroCalls is null)
@@ -154,11 +155,18 @@ public sealed class MusixmatchProvider(
                 return null;
             }
 
-            var subtitleBody = macroCalls.Value
+            var subtitleList = macroCalls.Value
                 .GetProperty("track.subtitles.get")
                 .GetProperty("message")
-                .GetProperty("body")
-                .GetProperty("subtitle_list")[0]
+                .GetProperty("body");
+            if (subtitleList.ValueKind != JsonValueKind.Object ||
+                !subtitleList.TryGetProperty("subtitle_list", out var list) ||
+                list.GetArrayLength() == 0)
+            {
+                return null;
+            }
+
+            var subtitleBody = list[0]
                 .GetProperty("subtitle")
                 .GetProperty("subtitle_body")
                 .GetString();
@@ -172,7 +180,11 @@ public sealed class MusixmatchProvider(
         {
             return null;
         }
-        catch (IndexOutOfRangeException)
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
+        catch (ArgumentOutOfRangeException)
         {
             return null;
         }

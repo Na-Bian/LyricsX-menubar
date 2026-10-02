@@ -1,10 +1,13 @@
+using System.IO.Compression;
+using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
 
 namespace LyricsX.Providers;
 
 public sealed record ProviderHttpResponse(
     int StatusCode,
-    System.Net.Http.Headers.HttpResponseHeaders Headers,
+    HttpResponseHeaders Headers,
     string Body);
 
 public sealed class ProviderHttpClient : IDisposable
@@ -26,7 +29,9 @@ public sealed class ProviderHttpClient : IDisposable
     {
         this.providerName = providerName;
         this.maxResponseBytes = maxResponseBytes ?? DefaultMaxResponseBytes;
-        httpClient = new HttpClient(handler, disposeHandler: true)
+        // the wrapper guarantees the advertised gzip/deflate support regardless
+        // of how the injected handler is configured
+        httpClient = new HttpClient(new DecompressionHandler(handler), disposeHandler: true)
         {
             Timeout = timeout ?? DefaultTimeout
         };
@@ -133,5 +138,62 @@ public sealed class ProviderHttpClient : IDisposable
     {
         httpClient.Dispose();
         throttle.Dispose();
+    }
+
+    /// <summary>
+    /// Decompresses gzip/deflate responses when the handler did not, so the
+    /// client always honors the Accept-Encoding it advertises.
+    /// </summary>
+    private sealed class DecompressionHandler(HttpMessageHandler inner) : DelegatingHandler(inner)
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            var response = await base.SendAsync(request, cancellationToken);
+            var encodings = response.Content.Headers.ContentEncoding;
+            if (encodings.Count == 0)
+            {
+                return response;
+            }
+
+            var encoding = encodings.Last().ToLowerInvariant();
+            Stream Decompress(Stream source) => encoding switch
+            {
+                "gzip" => new GZipStream(source, CompressionMode.Decompress),
+                "deflate" => new DeflateStream(source, CompressionMode.Decompress),
+                _ => source
+            };
+
+            if (encoding is not ("gzip" or "deflate"))
+            {
+                return response;
+            }
+
+            var original = response.Content;
+            var decompressed = new DecompressedHttpContent(original, Decompress);
+            response.Content = decompressed;
+            return response;
+        }
+    }
+
+    private sealed class DecompressedHttpContent(
+        HttpContent inner,
+        Func<Stream, Stream> decompress) : HttpContent
+    {
+        protected override async Task SerializeToStreamAsync(
+            Stream stream,
+            TransportContext? context)
+        {
+            await using var source = await inner.ReadAsStreamAsync();
+            await using var decompressor = decompress(source);
+            await decompressor.CopyToAsync(stream);
+        }
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = 0;
+            return false;
+        }
     }
 }

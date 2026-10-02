@@ -36,43 +36,52 @@ public sealed class LyricsSearchCoordinator(
         LyricCandidate? best = null;
         var bestScore = 0.0;
         var reader = channel.Reader;
-        while (true)
+        try
         {
-            if (!reader.TryRead(out var candidate))
+            while (true)
             {
-                try
+                if (!reader.TryRead(out var candidate))
                 {
-                    if (!await reader.WaitToReadAsync(cancellation.Token))
+                    try
+                    {
+                        if (!await reader.WaitToReadAsync(cancellation.Token))
+                        {
+                            break;
+                        }
+
+                        continue;
+                    }
+                    catch (OperationCanceledException)
                     {
                         break;
                     }
+                }
 
+                var score = LyricCandidateScorer.Score(request.Track, candidate);
+                if (score <= 0)
+                {
                     continue;
                 }
-                catch (OperationCanceledException)
+
+                if (best is null)
                 {
-                    break;
+                    best = candidate;
+                    bestScore = score;
+                    cancellation.CancelAfter(qualityWindow);
+                    yield return new LyricSearchState(candidate, IsFinal: false, Score: score);
+                }
+                else if (score > bestScore)
+                {
+                    best = candidate;
+                    bestScore = score;
                 }
             }
-
-            var score = LyricCandidateScorer.Score(request.Track, candidate);
-            if (score <= 0)
-            {
-                continue;
-            }
-
-            if (best is null)
-            {
-                best = candidate;
-                bestScore = score;
-                cancellation.CancelAfter(qualityWindow);
-                yield return new LyricSearchState(candidate, IsFinal: false, Score: score);
-            }
-            else if (score > bestScore)
-            {
-                best = candidate;
-                bestScore = score;
-            }
+        }
+        finally
+        {
+            // disposing the iterator (consumer break / track change) must stop
+            // the pumps too, not only the linked token source
+            cancellation.Cancel();
         }
 
         if (best is not null)

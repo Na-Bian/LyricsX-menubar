@@ -139,6 +139,31 @@ public sealed class ProviderHttpClientTests
         Assert.AreEqual("{}", response.Body);
     }
 
+    [TestMethod]
+    public async Task SendAsync_DecompressesGzipResponses()
+    {
+        var raw = System.Text.Encoding.UTF8.GetBytes("{\"greeting\":\"hello 汉字\"}");
+        using var compressed = new System.IO.MemoryStream();
+        using (var gzip = new System.IO.Compression.GZipStream(
+            compressed, System.IO.Compression.CompressionLevel.Optimal, leaveOpen: true))
+        {
+            gzip.Write(raw);
+        }
+
+        var stub = new StubHttpMessageHandler(_ =>
+        {
+            var content = new ByteArrayContent(compressed.ToArray());
+            content.Headers.Add("Content-Encoding", "gzip");
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = content };
+        });
+        using var client = Create(stub);
+
+        var body = await client.SendAsync(
+            new HttpRequestMessage(HttpMethod.Get, TestUri), CancellationToken.None);
+
+        Assert.AreEqual("{\"greeting\":\"hello 汉字\"}", body);
+    }
+
     private static ProviderHttpClient Create(StubHttpMessageHandler stub) =>
         new("test", stub, version: "1.2.3");
 

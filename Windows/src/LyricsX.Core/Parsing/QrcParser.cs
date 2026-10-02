@@ -47,10 +47,14 @@ public sealed partial class QrcParser : ILyricParser
                 builder.Append(fragment);
             }
 
-            var start = TimeSpan.FromMilliseconds(
-                long.Parse(tag.Groups[2].Value, CultureInfo.InvariantCulture));
-            var duration = TimeSpan.FromMilliseconds(
-                long.Parse(tag.Groups[3].Value, CultureInfo.InvariantCulture));
+            if (!EnhancedTimestampHelper.TryParseMilliseconds(
+                    tag.Groups[2].Value, out var start) ||
+                !EnhancedTimestampHelper.TryParseMilliseconds(
+                    tag.Groups[3].Value, out var duration))
+            {
+                continue;
+            }
+
             words.Add(new LyricWord(start, duration, fragment));
             tailStart = tag.Index + tag.Length;
         }

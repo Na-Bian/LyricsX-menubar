@@ -84,3 +84,37 @@ public sealed class KrcParserTests
             new KrcParser().Parse("[id:kugou]"));
     }
 }
+
+[TestClass]
+public sealed class EnhancedTimestampMalformedInputTests
+{
+    [TestMethod]
+    public void QrcParser_SkipsLinesWithAbsurdTimestampsButKeepsValidOnes()
+    {
+        var document = new QrcParser().Parse(
+            "[99999999999999999999999,1]bad\n[1000,2000]good(1200,300)\n");
+
+        Assert.AreEqual(1, document.Lines.Count);
+        Assert.AreEqual("good", document.Lines[0].Content);
+    }
+
+    [TestMethod]
+    public void KrcParser_SkipsLinesWithAbsurdTimestampsButKeepsValidOnes()
+    {
+        var document = new KrcParser().Parse(
+            "[99999999999999999999999,1]bad\n[1000,2000]<0,500,0>好\n");
+
+        Assert.AreEqual(1, document.Lines.Count);
+        Assert.AreEqual("好", document.Lines[0].Content);
+    }
+
+    [TestMethod]
+    public void QrcParser_SkipsLinesBeyondOneDay()
+    {
+        var document = new QrcParser().Parse(
+            "[86400000001,1]too-far\n[1000,2000]near\n");
+
+        Assert.AreEqual(1, document.Lines.Count);
+        Assert.AreEqual("near", document.Lines[0].Content);
+    }
+}

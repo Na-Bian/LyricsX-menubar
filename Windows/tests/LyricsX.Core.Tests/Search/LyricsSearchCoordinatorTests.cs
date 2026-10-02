@@ -172,6 +172,46 @@ public sealed class LyricsSearchCoordinatorTests
             Candidate("c", "Exact Song", "Artist", 0)));
     }
 
+    [TestMethod]
+    public async Task SearchAsync_EarlyBreakCancelsProviderEnumeration()
+    {
+        var provider = new BlockingProvider(Candidate("c", "Exact Song", "Exact Artist", 0));
+        var coordinator = new LyricsSearchCoordinator([provider],
+            TimeSpan.FromMilliseconds(50));
+
+        await foreach (var _ in coordinator.SearchAsync(
+            new LyricSearchRequest(Track("Exact Song", "Exact Artist")), CancellationToken.None))
+        {
+            break;
+        }
+
+        Assert.IsTrue(provider.EnumerationCompleted.Task.Wait(TimeSpan.FromSeconds(2)),
+            "provider enumeration was not cancelled after the consumer broke early");
+    }
+
+    private sealed class BlockingProvider(LyricCandidate first) : ILyricsProvider
+    {
+        public TaskCompletionSource EnumerationCompleted { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public string Id => "blocking";
+
+        public async IAsyncEnumerable<LyricCandidate> SearchAsync(
+            LyricSearchRequest request,
+            [EnumeratorCancellation] CancellationToken cancellationToken)
+        {
+            yield return first;
+            try
+            {
+                await Task.Delay(Timeout.Infinite, cancellationToken);
+            }
+            finally
+            {
+                EnumerationCompleted.TrySetResult();
+            }
+        }
+    }
+
     private static MediaTrack Track(
         string title, string artist, string? album = null) =>
         new("Browser", "id", title, artist, album, TimeSpan.FromSeconds(200));

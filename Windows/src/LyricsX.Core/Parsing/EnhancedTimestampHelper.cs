@@ -36,10 +36,12 @@ internal static partial class EnhancedTimestampHelper
             var stamp = LineTag().Match(line);
             if (stamp.Success)
             {
-                var position = TimeSpan.FromMilliseconds(
-                    long.Parse(stamp.Groups[1].Value, CultureInfo.InvariantCulture));
-                var duration = TimeSpan.FromMilliseconds(
-                    long.Parse(stamp.Groups[2].Value, CultureInfo.InvariantCulture));
+                if (!TryParseMilliseconds(stamp.Groups[1].Value, out var position) ||
+                    !TryParseMilliseconds(stamp.Groups[2].Value, out var duration))
+                {
+                    continue;
+                }
+
                 lines.Add((position, duration, stamp.Groups[3].Value));
                 continue;
             }
@@ -76,6 +78,25 @@ internal static partial class EnhancedTimestampHelper
         metadata = new LyricMetadata(title, artist, album, author, null,
             new Dictionary<string, string>());
         return lines;
+    }
+
+    /// <summary>
+    /// Parses a millisecond count, rejecting absent numbers, overflow values,
+    /// and anything beyond one day: a malformed remote row is skipped, never
+    /// allowed to abort the provider stream.
+    /// </summary>
+    internal static bool TryParseMilliseconds(string value, out TimeSpan result)
+    {
+        result = TimeSpan.Zero;
+        if (!long.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var milliseconds) ||
+            milliseconds < 0 ||
+            milliseconds > 86_400_000)
+        {
+            return false;
+        }
+
+        result = TimeSpan.FromMilliseconds(milliseconds);
+        return true;
     }
 
     [GeneratedRegex(@"^\[(\d+),(\d+)\](.*)")]

@@ -135,6 +135,60 @@ public sealed class MusixmatchProviderTests
         });
     }
 
+    [TestMethod]
+    public async Task SearchAsync_ToleratesNonObjectMacroBody()
+    {
+        var stub = new MusixmatchStubHandler
+        {
+            SubtitlesJson = """{ "message": { "header": { "status_code": 200 }, "body": [] } }"""
+        };
+
+        var count = 0;
+        var provider = CreateProvider(stub);
+        await foreach (var _ in provider.SearchAsync(
+            new LyricSearchRequest(Track), CancellationToken.None))
+        {
+            count++;
+        }
+
+        Assert.AreEqual(0, count);
+    }
+
+    [TestMethod]
+    public async Task SearchAsync_ToleratesEmptySubtitleList()
+    {
+        var stub = new MusixmatchStubHandler
+        {
+            SubtitlesJson = """
+{
+  "message": {
+    "header": { "status_code": 200 },
+    "body": {
+      "macro_calls": {
+        "matcher.track.get": {
+          "message": { "header": { "status_code": 200 }, "body": { "track": {} } }
+        },
+        "track.subtitles.get": {
+          "message": { "header": { "status_code": 200 }, "body": { "subtitle_list": [] } }
+        }
+      }
+    }
+  }
+}
+"""
+        };
+
+        var count = 0;
+        var provider = CreateProvider(stub);
+        await foreach (var _ in provider.SearchAsync(
+            new LyricSearchRequest(Track), CancellationToken.None))
+        {
+            count++;
+        }
+
+        Assert.AreEqual(0, count);
+    }
+
     private static MusixmatchProvider CreateProvider(MusixmatchStubHandler stub) =>
         new(new ProviderHttpClient("musixmatch", stub));
 

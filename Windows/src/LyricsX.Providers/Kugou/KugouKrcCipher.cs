@@ -10,6 +10,8 @@ namespace LyricsX.Providers;
 /// </summary>
 public static class KugouKrcCipher
 {
+    private const int MaxInflatedBytes = 16 * 1024 * 1024;
+
     private static readonly byte[] Magic = "krc1"u8.ToArray();
     private static readonly byte[] DecodeKey = [64, 71, 97, 119, 94, 50, 116, 71, 81, 54, 49, 45, 206, 210, 110, 105];
 
@@ -41,15 +43,32 @@ public static class KugouKrcCipher
         {
             using var input = new MemoryStream(decrypted, 2, decrypted.Length - 2);
             using var deflate = new DeflateStream(input, CompressionMode.Decompress);
-            using var output = new MemoryStream();
-            deflate.CopyTo(output);
-            var text = Encoding.UTF8.GetString(output.ToArray());
+            var text = Encoding.UTF8.GetString(InflateBounded(deflate));
             return text.Length > 0 ? text : null;
         }
         catch (InvalidDataException)
         {
             return null;
         }
+    }
+
+    private static byte[] InflateBounded(DeflateStream deflate)
+    {
+        using var output = new MemoryStream();
+        var buffer = new byte[8192];
+        int read;
+        while ((read = deflate.Read(buffer, 0, buffer.Length)) > 0)
+        {
+            if (output.Length + read > MaxInflatedBytes)
+            {
+                // decompression bomb: drop the payload instead of trusting it
+                return [];
+            }
+
+            output.Write(buffer, 0, read);
+        }
+
+        return output.ToArray();
     }
 
     public static string EncryptToBase64(string krc)

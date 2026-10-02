@@ -17,6 +17,7 @@
 - Left click opens the compact menu. Right click opens the full menu. The tray opens the same full menu.
 - Every command must be reachable by keyboard and expose a meaningful AutomationProperties name.
 - The taskbar lyric window must not activate; preferences and manual search are normal activatable windows.
+- The Spotify connection flow must implement the loopback listener (`http://127.0.0.1:<ephemeral-port>/callback/`) and browser launch here; `LyricsX.Providers` exposes `BuildAuthorizeUrl`/`CompleteAuthorizationAsync` for it.
 - Commit only files named by the current task.
 
 ## Stable App Services

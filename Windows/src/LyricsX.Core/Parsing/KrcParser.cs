@@ -40,10 +40,15 @@ public sealed partial class KrcParser : ILyricParser
         var words = new List<LyricWord>(tags.Count);
         foreach (Match tag in tags)
         {
-            var start = linePosition + TimeSpan.FromMilliseconds(
-                long.Parse(tag.Groups[1].Value, CultureInfo.InvariantCulture));
-            var duration = TimeSpan.FromMilliseconds(
-                long.Parse(tag.Groups[2].Value, CultureInfo.InvariantCulture));
+            if (!EnhancedTimestampHelper.TryParseMilliseconds(
+                    tag.Groups[1].Value, out var relativeStart) ||
+                !EnhancedTimestampHelper.TryParseMilliseconds(
+                    tag.Groups[2].Value, out var duration))
+            {
+                continue;
+            }
+
+            var start = linePosition + relativeStart;
             var fragment = tag.Groups[3].Value;
             if (fragment.Length > 0)
             {
