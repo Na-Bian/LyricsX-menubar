@@ -17,10 +17,13 @@ public partial class PreferencesViewModel : ObservableObject
     private readonly AppSettingsAccessor settingsAccessor;
 
     [ObservableProperty]
-    private partial AppSettings Working { get; set; }
+    public partial AppSettings Working { get; set; }
 
     [ObservableProperty]
-    private partial string? ValidationError { get; set; }
+    public partial string? ValidationError { get; set; }
+
+    [ObservableProperty]
+    public partial string? StartupError { get; set; }
 
     public PreferencesViewModel(AppSettingsAccessor settingsAccessor)
     {

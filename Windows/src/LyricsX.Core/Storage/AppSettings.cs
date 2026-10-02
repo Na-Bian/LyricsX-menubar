@@ -25,12 +25,9 @@ public sealed record AppSettings(
     double FontSize = 13,
     string FontWeight = "SemiBold",
     bool StrictSearch = false,
-    IReadOnlyList<string> BlockedPhrases = null!)
+    IReadOnlyList<string> BlockedPhrases = null!,
+    IReadOnlyDictionary<string, string> Extra = null!)
 {
-    public AppSettings()
-        : this(1, false, true, 260, 0, ChineseConversion.None, [], [], [])
-    {
-    }
 
     // IReadOnlyList fields get reference equality from the generated record
     // members; JSON round-trips produce different list instances, so compare
@@ -57,7 +54,9 @@ public sealed record AppSettings(
         FontSize == other.FontSize &&
         FontWeight == other.FontWeight &&
         StrictSearch == other.StrictSearch &&
-        (BlockedPhrases ?? []).SequenceEqual(other.BlockedPhrases ?? []);
+        (BlockedPhrases ?? []).SequenceEqual(other.BlockedPhrases ?? []) &&
+        ((Extra == null || Extra.Count == 0) ==
+            (other.Extra == null || other.Extra.Count == 0));
 
     public override int GetHashCode() => HashCode.Combine(
         SchemaVersion, LaunchAtLogin, ShowWhenPaused, WidthDip,
