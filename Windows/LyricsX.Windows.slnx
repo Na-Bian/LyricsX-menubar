@@ -5,4 +5,5 @@
   <Project Path="tests/LyricsX.Core.Tests/LyricsX.Core.Tests.csproj" />
   <Project Path="tests/LyricsX.Providers.Tests/LyricsX.Providers.Tests.csproj" />
   <Project Path="tests/LyricsX.Platform.Windows.Tests/LyricsX.Platform.Windows.Tests.csproj" />
+  <Project Path="tools/MediaSessionProbe/MediaSessionProbe.csproj" />
 </Solution>
