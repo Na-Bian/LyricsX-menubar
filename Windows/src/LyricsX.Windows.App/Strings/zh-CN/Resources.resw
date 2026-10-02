@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="Menu.Preferences" xml:space="preserve"><value>偏好设置…</value></data>
+  <data name="Menu.ManualSearch" xml:space="preserve"><value>手动搜索歌词…</value></data>
+  <data name="Menu.Exit" xml:space="preserve"><value>退出 LyricsX</value></data>
+  <data name="Menu.Earlier" xml:space="preserve"><value>歌词提前 0.5 秒</value></data>
+  <data name="Menu.Later" xml:space="preserve"><value>歌词延后 0.5 秒</value></data>
+  <data name="Menu.ResetOffset" xml:space="preserve"><value>重置歌词偏移</value></data>
+  <data name="Menu.HideLyrics" xml:space="preserve"><value>隐藏任务栏歌词</value></data>
+  <data name="Menu.ShowLyrics" xml:space="preserve"><value>显示任务栏歌词</value></data>
+  <data name="Menu.OpenLocal" xml:space="preserve"><value>打开本地歌词…</value></data>
+  <data name="Menu.Export" xml:space="preserve"><value>导出当前歌词…</value></data>
+  <data name="Menu.IgnoreTrack" xml:space="preserve"><value>忽略这首歌</value></data>
+  <data name="Menu.IgnoreAlbum" xml:space="preserve"><value>忽略此专辑</value></data>
+  <data name="Menu.OpenLogs" xml:space="preserve"><value>打开日志文件夹</value></data>
+  <data name="Menu.CopyDiagnostics" xml:space="preserve"><value>复制诊断信息</value></data>
+  <data name="Status.NoMedia" xml:space="preserve"><value>无正在播放的媒体</value></data>
+  <data name="Status.Searching" xml:space="preserve"><value>正在搜索歌词…</value></data>
+  <data name="Status.NotFound" xml:space="preserve"><value>未找到歌词</value></data>
+  <data name="Status.Ignored" xml:space="preserve"><value>已忽略此歌曲</value></data>
+</root>

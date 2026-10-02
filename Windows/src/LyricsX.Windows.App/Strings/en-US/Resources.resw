@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="Menu.Preferences" xml:space="preserve"><value>Preferences…</value></data>
+  <data name="Menu.ManualSearch" xml:space="preserve"><value>Search lyrics manually…</value></data>
+  <data name="Menu.Exit" xml:space="preserve"><value>Exit LyricsX</value></data>
+  <data name="Menu.Earlier" xml:space="preserve"><value>Lyrics 0.5s earlier</value></data>
+  <data name="Menu.Later" xml:space="preserve"><value>Lyrics 0.5s later</value></data>
+  <data name="Menu.ResetOffset" xml:space="preserve"><value>Reset lyric offset</value></data>
+  <data name="Menu.HideLyrics" xml:space="preserve"><value>Hide taskbar lyrics</value></data>
+  <data name="Menu.ShowLyrics" xml:space="preserve"><value>Show taskbar lyrics</value></data>
+  <data name="Menu.OpenLocal" xml:space="preserve"><value>Open local lyrics…</value></data>
+  <data name="Menu.Export" xml:space="preserve"><value>Export current lyrics…</value></data>
+  <data name="Menu.IgnoreTrack" xml:space="preserve"><value>Ignore this song</value></data>
+  <data name="Menu.IgnoreAlbum" xml:space="preserve"><value>Ignore this album</value></data>
+  <data name="Menu.OpenLogs" xml:space="preserve"><value>Open log folder</value></data>
+  <data name="Menu.CopyDiagnostics" xml:space="preserve"><value>Copy diagnostics</value></data>
+  <data name="Status.NoMedia" xml:space="preserve"><value>No media playing</value></data>
+  <data name="Status.Searching" xml:space="preserve"><value>Searching lyrics…</value></data>
+  <data name="Status.NotFound" xml:space="preserve"><value>No lyrics found</value></data>
+  <data name="Status.Ignored" xml:space="preserve"><value>Song ignored</value></data>
+</root>
