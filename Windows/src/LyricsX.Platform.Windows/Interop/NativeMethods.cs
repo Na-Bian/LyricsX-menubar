@@ -73,6 +73,33 @@ internal static partial class NativeMethods
     [LibraryImport("shell32.dll", EntryPoint = "SHQueryUserNotificationState")]
     internal static partial UserNotificationState QueryUserNotificationState();
 
+    [DllImport("shell32.dll", EntryPoint = "Shell_NotifyIconW", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool ShellNotifyIcon(uint message, ref NOTIFYICONDATA data);
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    internal struct NOTIFYICONDATA
+    {
+        public uint cbSize;
+        public nint hWnd;
+        public uint uID;
+        public uint uFlags;
+        public uint uCallbackMessage;
+        public nint hIcon;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+        public string szTip;
+        public uint dwState;
+        public uint dwStateMask;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
+        public string szInfo;
+        public uint uVersion;
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
+        public string szInfoTitle;
+        public uint dwInfoFlags;
+        public Guid guidItem;
+        public nint hBalloonIcon;
+    }
+
     [LibraryImport("user32.dll")]
     internal static partial nint GetForegroundWindow();
 
@@ -83,13 +110,101 @@ internal static partial class NativeMethods
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static partial bool IsWindowVisible(nint window);
 
+    [LibraryImport("user32.dll", EntryPoint = "RegisterHotKey", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static partial bool RegisterHotKey(nint window, int id, uint modifiers, uint virtualKey);
+
+    [LibraryImport("user32.dll", EntryPoint = "UnregisterHotKey", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static partial bool UnregisterHotKey(nint window, int id);
+
+    [LibraryImport("user32.dll", EntryPoint = "DefWindowProcW")]
+    internal static partial nint DefWindowProc(nint window, int message, nint wParam, nint lParam);
+
+    [LibraryImport("user32.dll", EntryPoint = "CreateWindowExW", StringMarshalling = StringMarshalling.Utf16, SetLastError = true)]
+    internal static partial nint CreateWindowEx(
+        uint exStyle,
+        nint className,
+        string windowName,
+        uint style,
+        int x,
+        int y,
+        int width,
+        int height,
+        nint parent,
+        nint menu,
+        nint instance,
+        nint param);
+
+    [LibraryImport("user32.dll", EntryPoint = "DestroyWindow", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static partial bool DestroyWindow(nint window);
+
+    [DllImport("user32.dll", EntryPoint = "RegisterClassW", SetLastError = true)]
+    internal static extern ushort RegisterClass(ref WNDCLASS wndClass);
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    internal struct WNDCLASS
+    {
+        public uint style;
+        public nint lpfnWndProc;
+        public int cbClsExtra;
+        public int cbWndExtra;
+        public nint hInstance;
+        public nint hIcon;
+        public nint hCursor;
+        public nint hbrBackground;
+        public nint? lpszMenuName;
+        public string lpszClassName;
+    }
+
+    // advapi32 (Credential Manager)
+
+    [DllImport("advapi32.dll", EntryPoint = "CredWriteW", CharSet = CharSet.Unicode, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool CredWrite(ref CREDENTIAL credential, uint flags);
+
+    [DllImport("advapi32.dll", EntryPoint = "CredReadW", CharSet = CharSet.Unicode, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool CredRead(
+        string targetName,
+        uint type,
+        uint flags,
+        out nint credentialPtr);
+
+    [DllImport("advapi32.dll", EntryPoint = "CredDeleteW", CharSet = CharSet.Unicode, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool CredDelete(string targetName, uint type, uint flags);
+
+    [LibraryImport("advapi32.dll")]
+    internal static partial void CredFree(nint buffer);
+
+    internal const uint CRED_TYPE_GENERIC = 1;
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    internal struct CREDENTIAL
+    {
+        public uint Flags;
+        public uint Type;
+        public nint TargetName;
+        public nint Comment;
+        public System.Runtime.InteropServices.ComTypes.FILETIME LastWritten;
+        public uint CredentialBlobSize;
+        public nint CredentialBlob;
+        public uint Persist;
+        public uint AttributeCount;
+        public nint Attributes;
+        public nint TargetAlias;
+        public nint UserName;
+    }
+
     // dwmapi
 
     // (entry points added by the windowing tasks)
 
     // kernel32
 
-    [LibraryImport("kernel32.dll", SetLastError = true)]
+    [LibraryImport("kernel32.dll", EntryPoint = "RtlZeroMemory")]
     internal static partial void SecureZeroMemory(nint destination, nuint length);
 
     // advapi32
