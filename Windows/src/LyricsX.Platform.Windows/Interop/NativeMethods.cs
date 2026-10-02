@@ -79,6 +79,10 @@ internal static partial class NativeMethods
     [LibraryImport("user32.dll")]
     internal static partial uint GetDpiForWindow(nint window);
 
+    [LibraryImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static partial bool IsWindowVisible(nint window);
+
     // dwmapi
 
     // (entry points added by the windowing tasks)
