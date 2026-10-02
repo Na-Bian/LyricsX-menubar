@@ -3,6 +3,20 @@ using System.Runtime.InteropServices;
 namespace LyricsX.Platform.Windows.Interop;
 
 /// <summary>
+/// SHQueryUserNotificationState values: QUIET/APP mean a full-screen app or
+/// presentation owns the foreground.
+/// </summary>
+internal enum UserNotificationState
+{
+    NOT_PRESENT = 1,
+    BUSY = 2,
+    RUNNING_DLL = 3,
+    QUIET = 4,
+    ACCEPTS_NOTIFICATIONS = 5,
+    APP = 7
+}
+
+/// <summary>
 /// All Win32 P/Invoke entry points for the platform layer. Declared with
 /// [LibraryImport] (source-generated marshaling), blittable structures, and
 /// SetLastError = true so failures surface as Win32Exception.
@@ -55,6 +69,15 @@ internal static partial class NativeMethods
 
     [LibraryImport("shell32.dll", EntryPoint = "SHAppBarMessage", SetLastError = true)]
     internal static partial nint SHAppBarMessage(uint message, ref APPBARDATA data);
+
+    [LibraryImport("shell32.dll", EntryPoint = "SHQueryUserNotificationState")]
+    internal static partial UserNotificationState QueryUserNotificationState();
+
+    [LibraryImport("user32.dll")]
+    internal static partial nint GetForegroundWindow();
+
+    [LibraryImport("user32.dll")]
+    internal static partial uint GetDpiForWindow(nint window);
 
     // dwmapi
 
