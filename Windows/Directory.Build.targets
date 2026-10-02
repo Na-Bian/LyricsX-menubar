@@ -1,0 +1,11 @@
+<Project>
+  <!-- Windows App SDK's buildTransitive forces UseWinUI=true onto any project
+       that (transitively) references a WinUI project, which breaks the MSTest
+       host (runtimeconfig generation is suppressed). Re-pin the test-host
+       properties after all package imports; opt back in per project with
+       ForceWinUITestHost=true when a test really hosts WinUI. -->
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true' And '$(ForceWinUITestHost)' != 'true'">
+    <UseWinUI>false</UseWinUI>
+    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
+  </PropertyGroup>
+</Project>
