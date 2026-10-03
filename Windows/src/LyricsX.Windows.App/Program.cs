@@ -29,7 +29,8 @@ internal static class Program
         WinRT.ComWrappersSupport.InitializeComWrappers();
         try
         {
-            using var singleInstance = new SingleInstanceService();
+            var singleInstance = new SingleInstanceService();
+            App.SingletonService = singleInstance;
             if (!singleInstance.TryBecomePrimary())
             {
                 var requested = singleInstance.SendCommand("show-preferences");
