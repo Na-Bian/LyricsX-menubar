@@ -10,3 +10,8 @@ xcuserdata
 .worktrees/
 swift-syntax/.swiftpm
 MenuNest/
+
+# Windows private signing material
+Windows/**/*.pfx
+Windows/**/*.pvk
+Windows/**/*.key

@@ -1,0 +1,43 @@
+LyricsX for Windows — 第三方组件与致谢
+========================================
+
+运行时与库(经 NuGet 分发,随应用重新分发其二进制):
+
+- Microsoft.WindowsAppSDK (Windows App SDK) 1.8.260317003
+  https://github.com/microsoft/WindowsAppSDK — MIT
+  重新分发:是(自包含发布)
+
+- CommunityToolkit.Mvvm 8.4.2
+  https://github.com/CommunityToolkit/dotnet — MIT
+  重新分发:是
+
+- Microsoft.Extensions.DependencyInjection 10.0.10(.NET 类库)
+  https://github.com/dotnet/runtime — MIT
+  重新分发:是
+
+- OpenccNetLib 1.6.1(含捆绑的 OpenCC 词典数据)
+  https://github.com/amphineko/opencc-net — Apache-2.0
+  词典:OpenCC https://github.com/BYVoid/Opencc — Apache-2.0
+  重新分发:是(库与词典数据)
+
+- .NET 10 运行时(自包含发布)
+  https://github.com/dotnet/runtime — MIT
+  重新分发:是
+
+测试专用(不随应用分发):
+- MSTest.TestFramework / MSTest.TestAdapter 4.3.2 — MIT
+- Microsoft.NET.Test.Sdk 18.8.1 — MIT
+- coverlet.collector 10.0.1 — MIT
+
+行为移植与设计来源:
+
+- LyricsX (macOS) https://github.com/ddddxxx/LyricsX — MPL-2.0
+  本仓库为其个人维护分支的 Windows 移植;歌词匹配/同步/偏好文案
+  等行为对齐原应用。
+
+- LyricsKit https://github.com/MxIris-LyricsX-Project/LyricsKit — MIT
+  NetEase(eapi 加密协议)、QQ 音乐(双搜索端点+QRC 解密)、
+  酷狗(KRC 解密)、Musixmatch、LRCLIB 的请求构造与响应处理
+  依据其 Swift 实现移植为 C#(独立实现,未复制代码)。
+
+完整许可证文本见各上游仓库;本应用自身按 MPL-2.0 授权(见 LICENSE.txt)。
