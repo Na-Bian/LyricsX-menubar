@@ -1,9 +1,12 @@
 using LyricsX.Platform.Windows;
 using LyricsX.Platform.Windows.Windowing;
+using LyricsX.Windows.App.Menus;
 using LyricsX.Windows.App.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 
 namespace LyricsX.Windows.App.Taskbar;
@@ -26,6 +29,82 @@ public sealed class TaskbarLyricsWindow : Window
 
     public TaskbarLyricsViewModel ViewModel => viewModel;
 
+    private LyricsMenuViewModel? menuViewModel;
+
+    internal void AttachMenus(LyricsMenuViewModel menuViewModel)
+    {
+        this.menuViewModel = menuViewModel;
+
+        var compact = BuildMenu(isFull: false);
+        var full = BuildMenu(isFull: true);
+        FlyoutBase.SetAttachedFlyout(marqueeCanvas, compact);
+        fullFlyout = full;
+
+        marqueeCanvas.PointerReleased += OnPointerReleased;
+        marqueeCanvas.KeyDown += OnKeyDown;
+    }
+
+    private MenuFlyout? fullFlyout;
+
+    private MenuFlyout BuildMenu(bool isFull)
+    {
+        var menu = new MenuFlyout();
+        if (menuViewModel is null)
+        {
+            return menu;
+        }
+
+        var header = new MenuFlyoutItem
+        {
+            Text = menuViewModel.CurrentTrackTitle,
+            IsEnabled = false
+        };
+        menu.Items.Add(header);
+
+        menu.Items.Add(Sep());
+        menu.Items.Add(Item("歌词提前 0.5 秒", menuViewModel.EarlierByHalfSecondCommand));
+        menu.Items.Add(Item("歌词延后 0.5 秒", menuViewModel.LaterByHalfSecondCommand));
+
+        if (isFull)
+        {
+            menu.Items.Add(Item("重置歌词偏移", menuViewModel.ResetOffsetCommand));
+        }
+
+        menu.Items.Add(Item("手动搜索歌词…", menuViewModel.ManualSearchCommand));
+        menu.Items.Add(Item(menuViewModel.VisibilityToggleText,
+            menuViewModel.ToggleVisibilityCommand));
+
+        if (isFull)
+        {
+            menu.Items.Add(Sep());
+            menu.Items.Add(Item("打开本地歌词…", menuViewModel.OpenLocalCommand));
+            menu.Items.Add(Item("导出当前歌词…", menuViewModel.ExportCommand));
+            menu.Items.Add(Item("忽略这首歌", menuViewModel.IgnoreTrackCommand));
+            menu.Items.Add(Sep());
+            menu.Items.Add(Item("打开日志文件夹", menuViewModel.OpenLogsCommand));
+            menu.Items.Add(Item("复制诊断信息", menuViewModel.CopyDiagnosticsCommand));
+            menu.Items.Add(Sep());
+        }
+
+        menu.Items.Add(Item("偏好设置…", menuViewModel.PreferencesCommand));
+
+        if (isFull)
+        {
+            menu.Items.Add(Item("退出 LyricsX", menuViewModel.ExitCommand));
+        }
+
+        return menu;
+    }
+
+    private static MenuFlyoutItem Item(string text, CommunityToolkit.Mvvm.Input.IRelayCommand command)
+    {
+        var item = new MenuFlyoutItem { Text = text };
+        item.Command = command;
+        return item;
+    }
+
+    private static MenuFlyoutSeparator Sep() => new();
+
     public TaskbarLyricsWindow()
     {
         Title = "LyricsX Taskbar Lyrics";
@@ -39,6 +118,33 @@ public sealed class TaskbarLyricsWindow : Window
 
         marqueeTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33) };
         marqueeTimer.Tick += (_, _) => AdvanceMarquee();
+    }
+
+    private void OnPointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        var point = e.GetCurrentPoint(marqueeCanvas);
+        var kind = point.Properties.PointerUpdateKind;
+        var isRight = kind == Microsoft.UI.Input.PointerUpdateKind.RightButtonReleased;
+        var isLeft = kind == Microsoft.UI.Input.PointerUpdateKind.LeftButtonReleased;
+        if (!isRight && !isLeft)
+        {
+            return;
+        }
+
+        var menu = isRight && fullFlyout is not null ? fullFlyout : BuildMenu(isFull: false);
+        FlyoutBase.SetAttachedFlyout(marqueeCanvas, menu);
+        FlyoutBase.ShowAttachedFlyout(marqueeCanvas);
+    }
+
+    private void OnKeyDown(object sender, KeyRoutedEventArgs args)
+    {
+        // Menu (Application) key → full menu (keyboard accessibility)
+        if (args.Key == global::Windows.System.VirtualKey.Application)
+        {
+            var menu = BuildMenu(isFull: true);
+            FlyoutBase.SetAttachedFlyout(marqueeCanvas, menu);
+            FlyoutBase.ShowAttachedFlyout(marqueeCanvas);
+        }
     }
 
     public void ApplyState(LyricsPresentationState state)
