@@ -29,20 +29,15 @@ public partial class App : Application
 
     internal static AppRuntime? Runtime { get; private set; }
 
+    internal static Services.SingleInstanceService? SingletonService { get; set; }
+
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
         var dispatcher = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
 
-        // single-instance: primary hosts the command pipe; second instances
-        // show preferences in the primary and exit
-        singleInstance = new SingleInstanceService();
-        if (!singleInstance.TryBecomePrimary())
-        {
-            singleInstance.SendCommand("show-preferences");
-            Environment.Exit(0);
-        }
-
-        singleInstance.CommandReceived += command =>
+        // single-instance election already happened in Program.Main; the
+        // primary's pipe forwards second-instance commands here
+        SingletonService!.CommandReceived += command =>
         {
             if (command == "show-preferences")
             {
@@ -71,11 +66,9 @@ public partial class App : Application
             await Runtime.ShutdownAsync();
         }
 
-        singleInstance?.Dispose();
+        SingletonService?.Dispose();
         Environment.Exit(0);
     }
-
-    private SingleInstanceService? singleInstance;
 }
 
 
