@@ -112,6 +112,7 @@ public sealed class AppRuntime : IAsyncDisposable
     {
         var logger = services.GetRequiredService<Diagnostics.AppLogger>();
         logger.Log(Diagnostics.LogLevel.Info, "lifetime", "L0003", "shutdown begin");
+        logger.Dispose(); // flush + enforce retention (7 days / 50 MiB)
 
         await SafeAsync("dispose-coordinator",
             () => services.GetRequiredService<ILyricsApplicationCoordinator>().DisposeAsync().AsTask());

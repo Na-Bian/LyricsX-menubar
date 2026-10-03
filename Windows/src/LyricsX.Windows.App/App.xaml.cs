@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using LyricsX.Windows.App.Composition;
+using LyricsX.Platform.Windows.Shell;
 using LyricsX.Windows.App.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System.IO;
@@ -47,12 +48,31 @@ public partial class App : Application
             {
                 dispatcher.TryEnqueue(() => PreferencesWindowService.Show());
             }
+            else if (command == "shutdown")
+            {
+                // uninstaller / second-instance shutdown: release and exit
+                dispatcher.TryEnqueue(() => _ = ShutdownAsync());
+            }
         };
 
         Shell = new MainWindow();
         Shell.Activate();
 
+        Services.GetRequiredService<TrayIconService>().ExitRequested += (_, _) =>
+            dispatcher.TryEnqueue(() => _ = ShutdownAsync());
+
         Runtime = await AppRuntime.StartAsync(Services, dispatcher);
+    }
+
+    private async Task ShutdownAsync()
+    {
+        if (Runtime is not null)
+        {
+            await Runtime.ShutdownAsync();
+        }
+
+        singleInstance?.Dispose();
+        Environment.Exit(0);
     }
 
     private SingleInstanceService? singleInstance;

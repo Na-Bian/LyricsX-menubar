@@ -23,6 +23,18 @@ public sealed class AppLogger(string logDirectory) : IDisposable
 
     public void Log(LogLevel level, string component, string eventId, string message)
     {
+        try
+        {
+            LogCore(level, component, eventId, message);
+        }
+        catch (Exception)
+        {
+            // logging must never crash the app
+        }
+    }
+
+    private void LogCore(LogLevel level, string component, string eventId, string message)
+    {
         lock (gate)
         {
             Directory.CreateDirectory(logDirectory);

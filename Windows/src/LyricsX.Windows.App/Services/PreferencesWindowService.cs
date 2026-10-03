@@ -17,11 +17,19 @@ public static class PreferencesWindowService
     {
         if (window is not null)
         {
-            window.Activate();
-            return;
+            try
+            {
+                window.Activate();
+                return;
+            }
+            catch (Exception)
+            {
+                window = null; // closed-window Activate throws; rebuild below
+            }
         }
 
         window = new Window { Title = "LyricsX 偏好设置" };
+        window.Closed += (_, _) => window = null;
         var viewModel = App.Services.GetRequiredService<PreferencesViewModel>();
 
         var widthBox = new NumberBox

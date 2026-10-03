@@ -32,10 +32,7 @@ internal static class Program
             using var singleInstance = new SingleInstanceService();
             if (!singleInstance.TryBecomePrimary())
             {
-                var requested = singleInstance.SendCommand(
-                    args.Any(arg => arg.Equals("--shutdown", StringComparison.OrdinalIgnoreCase))
-                        ? "shutdown"
-                        : "show-preferences");
+                var requested = singleInstance.SendCommand("show-preferences");
                 return requested ? 0 : 1;
             }
 

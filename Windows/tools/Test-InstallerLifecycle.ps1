@@ -13,7 +13,7 @@ $dataDirectory = Join-Path $env:LOCALAPPDATA 'LyricsX'
 $log = Join-Path $env:TEMP 'LyricsX-install.log'
 
 $process = Start-Process $installerPath `
-    -ArgumentList '/VERYSILENT', '/NORESTART', "/LOG=$log" `
+    -ArgumentList '/VERYSILENT', '/NORESTART', '/FORCECLOSEAPPLICATIONS', "/LOG=$log" `
     -Wait -PassThru
 if ($process.ExitCode -ne 0) { throw "Install failed: $($process.ExitCode)" }
 
@@ -25,6 +25,10 @@ New-Item -ItemType Directory -Force $dataDirectory | Out-Null
 'preserve-me' | Set-Content $marker -Encoding utf8
 
 if ($UninstallAtEnd) {
+    # launch the app so the uninstaller must stop a running instance
+    $app = Start-Process $exe
+    Start-Sleep 5
+
     $uninstaller = Get-ChildItem $installDirectory -Filter 'unins*.exe' |
         Select-Object -First 1
     if (-not $uninstaller) { throw 'Uninstaller not found.' }
@@ -36,6 +40,10 @@ if ($UninstallAtEnd) {
         -ArgumentList $uninstallArguments -Wait -PassThru
     if ($uninstall.ExitCode -ne 0) {
         throw "Uninstall failed: $($uninstall.ExitCode)"
+    }
+    Start-Sleep 3
+    if (Get-Process LyricsX.Windows.App -ErrorAction SilentlyContinue) {
+        throw 'Application process remained after uninstall.'
     }
     if (Test-Path $exe) { throw 'Application executable remained after uninstall.' }
     if ($DeleteUserData -and (Test-Path $marker)) {
