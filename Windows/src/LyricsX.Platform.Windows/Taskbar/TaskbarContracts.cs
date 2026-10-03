@@ -19,6 +19,8 @@ public interface ITaskbarPlacementService : IAsyncDisposable
     Task<TaskbarPlacement> GetPlacementAsync(
         int preferredWidthDip,
         CancellationToken cancellationToken);
+
+    Task RunAsync(CancellationToken cancellationToken);
 }
 
 public interface ITaskbarLyricsWindowHost

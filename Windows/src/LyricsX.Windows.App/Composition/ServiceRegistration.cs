@@ -65,6 +65,14 @@ public static class ServiceRegistration
         services.AddSingleton<ILyricsApplicationCoordinator, LyricsApplicationCoordinator>();
         services.AddSingleton<PreferencesViewModel>();
 
+        services.AddSingleton<Diagnostics.AppLogger>(sp =>
+            new Diagnostics.AppLogger(Path.Combine(dataRoot, "logs")));
+        services.AddSingleton<TrayIconService>();
+        services.AddSingleton<GlobalHotKeyService>(sp =>
+            new GlobalHotKeyService(new Win32HotKeyNativeApi(), 0x5100));
+        services.AddSingleton<StartupRegistrationService>();
+        services.AddSingleton<LyricsWindowPresenter>();
+
         return services.BuildServiceProvider();
     }
 
