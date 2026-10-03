@@ -6,7 +6,9 @@ namespace LyricsX.Windows.App.Menus;
 
 /// <summary>
 /// Commands backing the compact (left-click) and full (right-click/tray)
-/// lyric menus. Pure view model; the XAML flyouts bind to these commands.
+/// lyric menus. UI-bound actions (preferences/exit/pickers/logs/clipboard)
+/// surface as events the App layer subscribes to; lyrics-affecting actions
+/// call the coordinator directly.
 /// </summary>
 public partial class LyricsMenuViewModel : ObservableObject
 {
@@ -30,6 +32,14 @@ public partial class LyricsMenuViewModel : ObservableObject
 
     public string ExitTitle { get; } = "退出 LyricsX";
 
+    public event Action? PreferencesRequested;
+
+    public event Action? ExitRequested;
+
+    public event Action? LocalImportRequested;
+
+    public event Action? ExportRequested;
+
     public LyricsMenuViewModel(ILyricsApplicationCoordinator coordinator)
     {
         this.coordinator = coordinator;
@@ -49,11 +59,14 @@ public partial class LyricsMenuViewModel : ObservableObject
     private Task ResetOffsetAsync() => coordinator.ResetOffsetAsync();
 
     [RelayCommand]
-    private Task ManualSearchAsync() =>
-        coordinator.SearchManuallyAsync(
-            coordinator.Current.Playback.Track?.Title ?? string.Empty,
-            coordinator.Current.Playback.Track?.Artist ?? string.Empty,
-            CancellationToken.None);
+    private Task ManualSearchAsync()
+    {
+        LocalImportRequested = null;
+        ManualSearchRequested?.Invoke();
+        return Task.CompletedTask;
+    }
+
+    public event Action? ManualSearchRequested;
 
     [RelayCommand]
     private async Task ToggleVisibilityAsync()
@@ -63,6 +76,32 @@ public partial class LyricsMenuViewModel : ObservableObject
             ? "隐藏任务栏歌词"
             : "显示任务栏歌词";
     }
+
+    [RelayCommand]
+    private void Preferences() => PreferencesRequested?.Invoke();
+
+    [RelayCommand]
+    private void Exit() => ExitRequested?.Invoke();
+
+    [RelayCommand]
+    private void OpenLocal() => LocalImportRequested?.Invoke();
+
+    [RelayCommand]
+    private void Export() => ExportRequested?.Invoke();
+
+    [RelayCommand]
+    private async Task IgnoreTrackAsync() =>
+        await coordinator.IgnoreCurrentTrackAsync();
+
+    [RelayCommand]
+    private void OpenLogs() => OpenLogsRequested?.Invoke();
+
+    public event Action? OpenLogsRequested;
+
+    [RelayCommand]
+    private void CopyDiagnostics() => CopyDiagnosticsRequested?.Invoke();
+
+    public event Action? CopyDiagnosticsRequested;
 
     private void ApplyState(LyricsPresentationState state)
     {

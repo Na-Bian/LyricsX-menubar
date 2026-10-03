@@ -126,6 +126,34 @@ public sealed class LyricsApplicationCoordinator(
         return Task.CompletedTask;
     }
 
+    public string? CurrentFingerprint => currentFingerprint;
+
+    public async Task IgnoreCurrentTrackAsync()
+    {
+        var fingerprint = currentFingerprint;
+        if (fingerprint is null)
+        {
+            return;
+        }
+
+        var ignored = settings.Current.IgnoredTrackFingerprints.ToList();
+        if (!ignored.Contains(fingerprint))
+        {
+            ignored.Add(fingerprint);
+            await settings.ReplaceAsync(settings.Current with
+            {
+                IgnoredTrackFingerprints = ignored
+            });
+        }
+
+        CancelPipeline();
+        lock (gate)
+        {
+            document = null;
+        }
+        Publish(BuildState("已忽略此歌曲"));
+    }
+
     public ValueTask DisposeAsync()
     {
         session.PlaybackChanged -= OnPlaybackChanged;

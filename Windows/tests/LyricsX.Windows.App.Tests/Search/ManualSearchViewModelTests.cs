@@ -139,6 +139,10 @@ public sealed class ManualSearchViewModelTests
 
         public bool LyricsVisible { get; set; } = true;
 
+        public string? CurrentFingerprint { get; set; }
+
+        public Task IgnoreCurrentTrackAsync() => Task.CompletedTask;
+
         public Task ToggleLyricsVisibilityAsync()
         {
             LyricsVisible = !LyricsVisible;

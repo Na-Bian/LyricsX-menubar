@@ -84,6 +84,10 @@ public sealed class LyricsMenuViewModelTests
 
         public bool LyricsVisible { get; private set; } = true;
 
+        public string? CurrentFingerprint { get; set; }
+
+        public Task IgnoreCurrentTrackAsync() => Task.CompletedTask;
+
         public Task ToggleLyricsVisibilityAsync()
         {
             VisibilityToggled = true;

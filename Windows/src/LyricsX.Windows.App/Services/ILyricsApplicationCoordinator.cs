@@ -23,6 +23,10 @@ public interface ILyricsApplicationCoordinator : IAsyncDisposable
     Task ToggleLyricsVisibilityAsync();
 
     bool LyricsVisible { get; }
+
+    Task IgnoreCurrentTrackAsync();
+
+    string? CurrentFingerprint { get; }
 }
 
 public sealed record LyricsPresentationState(

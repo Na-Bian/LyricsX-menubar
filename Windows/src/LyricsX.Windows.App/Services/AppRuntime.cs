@@ -23,6 +23,9 @@ public sealed class AppRuntime : IAsyncDisposable
 
     public IReadOnlyList<string> StartupLog => log;
 
+    public LyricsPresentationState Current => services
+        .GetRequiredService<ILyricsApplicationCoordinator>().Current;
+
     private AppRuntime(IServiceProvider services, DispatcherQueue dispatcher)
     {
         this.services = services;
