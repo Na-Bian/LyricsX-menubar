@@ -17,20 +17,20 @@ namespace LyricsX.Windows.App.Services;
 /// </summary>
 public sealed class AppRuntime : IAsyncDisposable
 {
-    private readonly ServiceProvider services;
+    private readonly IServiceProvider services;
     private readonly DispatcherQueue dispatcher;
     private readonly string[] log = [];
 
     public IReadOnlyList<string> StartupLog => log;
 
-    private AppRuntime(ServiceProvider services, DispatcherQueue dispatcher)
+    private AppRuntime(IServiceProvider services, DispatcherQueue dispatcher)
     {
         this.services = services;
         this.dispatcher = dispatcher;
     }
 
     public static async Task<AppRuntime> StartAsync(
-        ServiceProvider services, DispatcherQueue dispatcher)
+        IServiceProvider services, DispatcherQueue dispatcher)
     {
         var runtime = new AppRuntime(services, dispatcher);
         await runtime.RunStartupAsync();

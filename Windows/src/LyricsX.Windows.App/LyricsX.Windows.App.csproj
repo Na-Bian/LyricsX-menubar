@@ -3,7 +3,14 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows10.0.22000.0</TargetFramework>
     <UseWinUI>true</UseWinUI>
-    <EnableMsixTooling>false</EnableMsixTooling>
+    <EnableMsixTooling Condition="'$(RuntimeIdentifier)' != ''">true</EnableMsixTooling>
+    <!-- publish builds (RID set) get Platform set so MSIX/PRI targets pass;
+         plain builds stay neutral for the AnyCPU test host -->
+    <Platform Condition="'$(RuntimeIdentifier)' == 'win-x64'">x64</Platform>
+    <Platform Condition="'$(RuntimeIdentifier)' == 'win-arm64'">arm64</Platform>
+    <!-- keep one output folder so the test project's copy of the App dll
+         resolves; publish dirs are separated by profile -->
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained Condition="'$(SelfContained)' == 'true'">true</WindowsAppSDKSelfContained>
     <PublishSingleFile>false</PublishSingleFile>
