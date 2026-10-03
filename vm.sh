@@ -8,10 +8,13 @@ ROOT=/Users/nabian/Documents/LyricsX-windows
 
 do_sync() {
   # wipe-and-copy: renamed/deleted local files must disappear on the VM, or
-  # stale duplicates poison the build (this bit us once with two XAML pages)
+  # stale duplicates poison the build. out/ (publish artifacts) survives the
+  # wipe so release outputs are not destroyed by every source sync.
+  ssh -o BatchMode=yes $VM "if exist C:\\Users\\31576\\LyricsX\\Windows\\out move C:\\Users\\31576\\LyricsX\\Windows\\out C:\\Users\\31576\\LyricsX\\out_keep" >/dev/null
   ssh -o BatchMode=yes $VM "if exist C:\\Users\\31576\\LyricsX\\Windows rmdir /s /q C:\\Users\\31576\\LyricsX\\Windows" >/dev/null
   ssh -o BatchMode=yes $VM "if not exist C:\\Users\\31576\\LyricsX mkdir C:\\Users\\31576\\LyricsX" >/dev/null
   COPYFILE_DISABLE=1 tar -czf - -C "$ROOT" --exclude '._*' Windows | ssh -o BatchMode=yes $VM "tar -xzf - -C C:/Users/31576/LyricsX"
+  ssh -o BatchMode=yes $VM "if exist C:\\Users\\31576\\LyricsX\\out_keep rmdir /s /q C:\\Users\\31576\\LyricsX\\Windows\\out & move C:\\Users\\31576\\LyricsX\\out_keep C:\\Users\\31576\\LyricsX\\Windows\\out" >/dev/null
 }
 
 case "${1:-}" in

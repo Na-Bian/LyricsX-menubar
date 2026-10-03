@@ -1,0 +1,36 @@
+name: Windows
+
+on:
+  push:
+    paths:
+      - "Windows/**"
+      - ".github/workflows/windows.yml"
+  pull_request:
+    paths:
+      - "Windows/**"
+      - ".github/workflows/windows.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+          cache: true
+          cache-dependency-path: "Windows/**/packages.lock.json"
+      - name: Validate
+        shell: pwsh
+        run: ./Windows/tools/Invoke-CI.ps1
+      - name: Upload diagnostic publish folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: LyricsX-Windows-ci
+          path: Windows/out/publish/win-x64
+          if-no-files-found: error
+          retention-days: 7
