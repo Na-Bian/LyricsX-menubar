@@ -49,6 +49,7 @@ public static class ServiceRegistration
         services.AddSingleton<GlobalMediaSessionSource>();
         services.AddSingleton<IMediaSessionSource>(sp => sp.GetRequiredService<GlobalMediaSessionSource>());
         services.AddSingleton<ITaskbarNativeApi, TaskbarNativeApi>();
+        services.AddSingleton<ITaskbarAutomationApi, TaskbarAutomationReader>();
         services.AddSingleton<IFullscreenDetector, ShellFullscreenDetector>();
         services.AddSingleton<TaskbarSnapshotReader>();
         services.AddSingleton<TaskbarIntervalCalculator>();

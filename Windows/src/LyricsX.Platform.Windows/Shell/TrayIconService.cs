@@ -55,7 +55,10 @@ public sealed class TrayIconService : ITrayIconService
     public void Show()
     {
         var data = BuildNotifyIconData();
-        if (!NativeMethods.ShellNotifyIcon(NIM_ADD, ref data))
+        // a stable GUID means a previous run's icon entry may still exist;
+        // NIM_MODIFY re-attaches to it instead of failing
+        if (!NativeMethods.ShellNotifyIcon(NIM_ADD, ref data) &&
+            !NativeMethods.ShellNotifyIcon(NIM_MODIFY, ref data))
         {
             throw new Win32Exception("Shell_NotifyIcon NIM_ADD failed");
         }
