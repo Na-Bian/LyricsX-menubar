@@ -18,7 +18,7 @@ foreach ($rid in $rids) {
     }
 }
 
-dotnet restore $solution --locked-mode
+dotnet restore $solution
 if ($LASTEXITCODE -ne 0) { throw 'dotnet restore failed.' }
 
 dotnet test $solution -c Release --no-restore --filter 'TestCategory!=LiveProvider&TestCategory!=InteractiveSession&TestCategory!=WindowsIntegration'

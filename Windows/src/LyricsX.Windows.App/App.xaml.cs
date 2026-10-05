@@ -33,6 +33,19 @@ public partial class App : Application
 
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
+        try
+        {
+            OnLaunchedCore(args);
+        }
+        catch (Exception launchError)
+        {
+            StartupDiagnostics.TraceFile("onlaunched: " + launchError);
+            throw;
+        }
+    }
+
+    private async void OnLaunchedCore(LaunchActivatedEventArgs args)
+    {
         var dispatcher = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
 
         // single-instance election already happened in Program.Main; the
@@ -51,7 +64,6 @@ public partial class App : Application
         };
 
         Shell = new MainWindow();
-        Shell.Activate();
 
         Services.GetRequiredService<TrayIconService>().ExitRequested += (_, _) =>
             dispatcher.TryEnqueue(() => _ = ShutdownAsync());

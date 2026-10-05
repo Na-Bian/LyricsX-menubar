@@ -172,9 +172,22 @@ public sealed class LyricsApplicationCoordinatorTests
 
     private static void Cleanup(string root)
     {
-        if (Directory.Exists(root))
+        // background pipeline writes can hold a handle briefly after the
+        // test body returns; retry instead of failing the cleanup race
+        for (var attempt = 0; attempt < 5; attempt++)
         {
-            Directory.Delete(root, true);
+            try
+            {
+                if (Directory.Exists(root))
+                {
+                    Directory.Delete(root, true);
+                }
+                return;
+            }
+            catch (IOException)
+            {
+                Thread.Sleep(200);
+            }
         }
     }
 

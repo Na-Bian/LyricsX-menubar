@@ -49,5 +49,5 @@ $hashLines = foreach ($file in $hashTargets) {
     $hash = (Get-FileHash $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
     "$hash *$($file.Name)"
 }
-$hashLines | Set-Content (Join-Path $artifact $Arch '\SHA256SUMS.txt') -Encoding ascii
+$hashLines | Set-Content (Join-Path (Join-Path $artifact $Arch) 'SHA256SUMS.txt') -Encoding ascii
 Write-Output (Join-Path $artifact $Arch)

@@ -31,6 +31,13 @@ public sealed class LyricsWindowPresenter
     {
         enabled = true;
         placementService.PlacementChanged += OnPlacementChanged;
+        // initial placement: without this the bar stays hidden until the
+        // first semantic change
+        _ = dispatcher.TryEnqueue(async () =>
+        {
+            lastPlacement = await placementService.GetPlacementAsync(260, CancellationToken.None);
+            Show();
+        });
     }
 
     private void OnPlacementChanged(object? sender, EventArgs args)
