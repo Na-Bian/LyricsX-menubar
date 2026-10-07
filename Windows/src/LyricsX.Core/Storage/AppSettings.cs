@@ -26,6 +26,7 @@ public sealed record AppSettings(
     string FontWeight = "SemiBold",
     bool StrictSearch = false,
     IReadOnlyList<string> BlockedPhrases = null!,
+    string PreferredPlayerSourceId = "",
     IReadOnlyDictionary<string, string> Extra = null!)
 {
 
@@ -54,6 +55,7 @@ public sealed record AppSettings(
         FontSize == other.FontSize &&
         FontWeight == other.FontWeight &&
         StrictSearch == other.StrictSearch &&
+        PreferredPlayerSourceId == other.PreferredPlayerSourceId &&
         (BlockedPhrases ?? []).SequenceEqual(other.BlockedPhrases ?? []) &&
         ((Extra == null || Extra.Count == 0) ==
             (other.Extra == null || other.Extra.Count == 0));

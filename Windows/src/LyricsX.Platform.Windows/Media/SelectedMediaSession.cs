@@ -10,7 +10,8 @@ namespace LyricsX.Platform.Windows.Media;
 public sealed class SelectedMediaSession(
     IMediaSessionSource source,
     MediaSessionRanker ranker,
-    TimeSpan? coalesceDelay = null) : ISelectedMediaSession
+    TimeSpan? coalesceDelay = null,
+    Func<string?>? preferredSourceProvider = null) : ISelectedMediaSession
 {
     private static readonly TimeSpan DefaultCoalesce = TimeSpan.FromMilliseconds(100);
 
@@ -99,7 +100,7 @@ public sealed class SelectedMediaSession(
     private async Task RefreshCoreAsync(CancellationToken cancellationToken)
     {
         var sessions = await source.GetSessionsAsync(cancellationToken);
-        var selected = ranker.Select(sessions, previousSessionId);
+        var selected = ranker.Select(sessions, previousSessionId, preferredSourceProvider?.Invoke());
         previousSessionId = selected?.SessionId;
 
         var snapshot = selected is null

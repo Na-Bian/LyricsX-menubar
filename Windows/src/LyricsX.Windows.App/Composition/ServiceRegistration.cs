@@ -55,7 +55,11 @@ public static class ServiceRegistration
         services.AddSingleton<TaskbarIntervalCalculator>();
         services.AddSingleton<ITaskbarPlacementService, TaskbarPlacementService>();
         services.AddSingleton<MediaSessionRanker>();
-        services.AddSingleton<SelectedMediaSession>();
+        services.AddSingleton(sp => new SelectedMediaSession(
+            sp.GetRequiredService<IMediaSessionSource>(),
+            sp.GetRequiredService<MediaSessionRanker>(),
+            preferredSourceProvider: () =>
+                sp.GetRequiredService<AppSettingsAccessor>().Current.PreferredPlayerSourceId));
         services.AddSingleton<ISelectedMediaSession>(sp => sp.GetRequiredService<SelectedMediaSession>());
 
         foreach (var provider in CreateProviders(settings))
@@ -64,13 +68,29 @@ public static class ServiceRegistration
         }
 
         services.AddSingleton<ILyricsApplicationCoordinator, LyricsApplicationCoordinator>();
-        services.AddSingleton<PreferencesViewModel>();
+        services.AddSingleton<LyricsX.Windows.App.Menus.LyricsMenuViewModel>();
+        services.AddSingleton(sp => new PreferencesViewModel(
+            sp.GetRequiredService<AppSettingsAccessor>(),
+            sp.GetRequiredService<StartupRegistrationService>()));
+        services.AddSingleton<SourcePreferencesViewModel>(sp =>
+            new SourcePreferencesViewModel(sp.GetRequiredService<AppSettingsAccessor>()));
+        services.AddSingleton<PlayerPreferencesViewModel>(sp =>
+            new PlayerPreferencesViewModel(sp.GetRequiredService<AppSettingsAccessor>()));
+        services.AddSingleton<FilterPreferencesViewModel>(sp =>
+            new FilterPreferencesViewModel(sp.GetRequiredService<AppSettingsAccessor>()));
+        services.AddSingleton(sp => new ShortcutPreferencesViewModel(
+            sp.GetRequiredService<AppSettingsAccessor>(),
+            sp.GetRequiredService<IHotKeyNativeApi>()));
+        services.AddSingleton<SpotifyConnector>(sp => new SpotifyConnector(
+            new ProviderHttpClientFactory(),
+            new CredentialTokenStore()));
 
+        services.AddSingleton<IHotKeyNativeApi, Win32HotKeyNativeApi>();
         services.AddSingleton<Diagnostics.AppLogger>(sp =>
             new Diagnostics.AppLogger(Path.Combine(dataRoot, "logs")));
         services.AddSingleton<TrayIconService>();
         services.AddSingleton<GlobalHotKeyService>(sp =>
-            new GlobalHotKeyService(new Win32HotKeyNativeApi(), 0x5100));
+            new GlobalHotKeyService(sp.GetRequiredService<IHotKeyNativeApi>(), 0x5100));
         services.AddSingleton<StartupRegistrationService>();
         services.AddSingleton<LyricsWindowPresenter>();
 

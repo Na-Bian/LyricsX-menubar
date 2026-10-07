@@ -63,9 +63,47 @@ public sealed class MediaSessionRankerTests
         Assert.AreEqual("prev", selected?.SessionId);
     }
 
+    [TestMethod]
+    public void Select_PreferredSourceRestrictsSelection()
+    {
+        var playing = Session("playing", PlaybackStatus.Playing, Now, "music.app");
+        var paused = Session("paused", PlaybackStatus.Paused, Now, "video.app");
+
+        var selected = new MediaSessionRanker().Select(
+            [playing, paused], previousSessionId: null, preferredSourceId: "video.app");
+
+        Assert.AreEqual("paused", selected?.SessionId);
+    }
+
+    [TestMethod]
+    public void Select_PreferredSourceAbsentFallsBackToAutomatic()
+    {
+        var playing = Session("playing", PlaybackStatus.Playing, Now, "music.app");
+
+        var selected = new MediaSessionRanker().Select(
+            [playing], previousSessionId: null, preferredSourceId: "closed.app");
+
+        Assert.AreEqual("playing", selected?.SessionId);
+    }
+
+    [TestMethod]
+    public void Select_EmptyPreferredSourceBehavesAutomatically()
+    {
+        var playing = Session("playing", PlaybackStatus.Playing, Now);
+
+        var selected = new MediaSessionRanker().Select(
+            [playing], previousSessionId: null, preferredSourceId: "");
+
+        Assert.AreEqual("playing", selected?.SessionId);
+    }
+
     private static MediaSessionSnapshot Session(
         string id, PlaybackStatus status, DateTimeOffset updated) =>
-        new(id, id + ".app", status,
-            new MediaTrack(id + ".app", "tid", "Title", "Artist", null, TimeSpan.FromSeconds(100)),
+        Session(id, status, updated, id + ".app");
+
+    private static MediaSessionSnapshot Session(
+        string id, PlaybackStatus status, DateTimeOffset updated, string sourceAppId) =>
+        new(id, sourceAppId, status,
+            new MediaTrack(sourceAppId, "tid", "Title", "Artist", null, TimeSpan.FromSeconds(100)),
             TimeSpan.Zero, 1.0, updated, id + "-native");
 }
